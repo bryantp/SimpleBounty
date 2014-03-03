@@ -1,0 +1,90 @@
+name: SimpleBounty
+main: com.bryantp.SimpleBounty.SimpleBounty
+version: 1.6
+depend: [Vault]
+commands: 
+   bountylist:
+        description: Lists the bounties of all the players
+        usage: /<command>
+        aliases: blist
+   bounty:
+        description: Lists the bounty of you or another player
+        usage: /<command> <bounty type> <playername>
+   setcommunalbounty:
+        description: Allows you to set the communal bounty for a user
+        usage: /<command> <playername> <bounty> 
+        aliases: setcbounty
+   setplayersetbounty:
+        description: Allows you to set the player set bounty for a user
+        usage: /<command> <playername> <bounty> 
+        aliases: setpsbounty
+   addcommunalbounty:
+        description: Adds a certain amount to a person's communal bounty
+        usage: /<command> <playername> <amount>
+        aliases: addcbounty
+   addplayersetbounty:
+        description: Adds a certain amount to a person's player set bounty
+        usage: /<command> <playername> <amount> 
+        aliases: addpsbounty
+   bountyreload:
+        description: Reloads the config, does not affect SQL or flatfile usage. 
+        aliases: reloadbounty
+   bountyload:
+        description: Loads from the save
+   placebounty:
+        description: Places a bounty on a player 
+   bountyinfo:
+        description: Gives information about the SimpleBounty plugin 
+   convertdb:
+        description: Converts database from flatfile to SQL and vice versa. 
+   paybounty:
+        description: Allows the user to pay off their bounties 
+        usage: /<command> <c || ps> amount 
+permissions:
+     bounty.*:
+         description: Gives users access to normal commands
+         children: 
+              bounty.bounty: true
+              bounty.bountylist: true
+              bounty.placebounty: true 
+     bounty.bounty:
+         description: Gives users access to the bounty command
+     bounty.bountylist:
+         description: Gives users access to the bounty list command
+     bounty.placebounty:
+         description: Gives users access to the placebounty command
+     bounty.paybounty:
+         description: Gives users access to placebounty command  
+     bounty.admin.*:
+          description: Gives access to housekeeping commands
+          children:
+               bounty.admin.setpsbounty: true
+               bounty.admin.setcbounty: true
+               bounty.admin.addcbounty: true
+               bounty.admin.addpsbounty: true
+               bounty.admin.reloadbounty: true
+               bounty.admin.bountyinfo: true 
+     bounty.admin.setcbounty:
+          description: Allow you to set a communal bounty for a user
+          default: op
+     bounty.admin.setpsbounty:
+          description: Allows users to set a player set bounty 
+          default: op
+     bounty.admin.addcbounty:
+          description: Allows you to add to a user's communal bounty
+          default: op
+     bounty.admin.addpsbounty:
+          description: Allows you to add to a user's player set bounty
+          default: op
+     bounty.admin.reloadbounty:
+          description: Reloads the Configuration file and SaveFile
+          default: op    
+     bounty.admin.bountyinfo:
+          description: Displays the version number of SimpleBounty
+          default: op 
+     bounty.admin.convertdb:
+          description: Allows you to convert the database
+          default: op 
+     bounty.admin.bountyload: 
+          description: Allows you to load from the saveFile
+          default: op

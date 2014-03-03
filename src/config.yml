@@ -1,0 +1,20 @@
+#Default Configuration File
+communalbounty:
+    enable: true
+    increment: 2
+    decrement: 2
+    incrementnobounty: true 
+psbounty:
+    enable: true
+    min: 0
+    max: 0
+showvictimmessages: true
+showkillermessages: true
+forcegoldecon: false 
+mySQL: 
+    enabled: false 
+    host: ''
+    port: ''
+    database: '' 
+    username: ''
+    password: ''

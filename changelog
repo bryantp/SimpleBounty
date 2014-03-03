@@ -1,0 +1,8 @@
+Changelog Simplebounty
+
+3/2/14
+
+- Cleaned up a lot of code
+- Consolidated the Bounty list to one class. 
+- Started to implement SqLite
+- Updated to Bukkit 1.7.2
