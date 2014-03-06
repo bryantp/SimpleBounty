@@ -1,7 +1,9 @@
 package com.bryantp.SimpleBounty;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.logging.Level;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -24,7 +26,7 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 	private final BountyListener eListener; 
 	private final Permission perms; 
 	private boolean  psEnable,incrementnoBounty; 
-	private int max, min; 
+	private BigDecimal max, min; 
 
 	
 	public SimpleBountyCommandExecutor(SimpleBounty sp, BountyListener eListener, Config config, SaveData saveData){
@@ -36,9 +38,11 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 		psEnable = config.getpsEnable();
 	}
 	
-	public void setConfig(){
-		min = config.getMin();
-		max = config.getMax(); 
+	public void setConfigVariables(){
+		this.psEnable = config.getpsEnable();
+		this.incrementnoBounty = config.getincrementnoBounty();
+		this.min = config.getMin();
+		this.max = config.getMax();
 	}
 	
 	@Override
@@ -207,15 +211,24 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 				else{
 					if(sp.checkExists(args[0])){
 						try{
-							if(player.getName().equals(args[0])) player.sendMessage(ChatColor.RED + "You can't place a bounty on yourself"); 
-							else if(Integer.parseInt(args[1]) <= 0) player.sendMessage(ChatColor.RED + "Please enter a value above 0"); 
-							else if(Integer.parseInt(args[1]) < min && min != 0) player.sendMessage(ChatColor.RED + "Please enter a value greater than " + min); 
-							else if(Integer.parseInt(args[1]) > max && min != 0) player.sendMessage(ChatColor.RED + "Please enter a value less than " + max); 
-							else eListener.placeBounty(player,args[0], Integer.parseInt(args[1]));
+							if(player.getName().equals(args[0])){
+								player.sendMessage(ChatColor.RED + "You can't place a bounty on yourself"); 
+							}
+							else if(Integer.parseInt(args[1]) <= 0){
+								player.sendMessage(ChatColor.RED + "Please enter a value above 0"); 
+							}
+							else if(new BigDecimal(Integer.parseInt(args[1])).compareTo(min) == -1 && min != BigDecimal.ZERO){
+								player.sendMessage(ChatColor.RED + "Please enter a value greater than " + min); 
+							}
+							else if(new BigDecimal(Integer.parseInt(args[1])).compareTo(max) == 1){
+								player.sendMessage(ChatColor.RED + "Please enter a value less than " + max); 
+							}
+
 							return true;
 						}
 						catch(Exception e){
-							player.sendMessage(ChatColor.RED + "Please enter a number");
+							player.sendMessage(ChatColor.RED + "Please enter a number E:" + e.getMessage());
+							SimpleBounty.logger.log(Level.INFO, "Can't convert " + args[1] + " " + e.getMessage());
 							return true;
 						}
 					}
@@ -245,7 +258,7 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 				try{
 					if(Integer.parseInt(args[1]) < 0) player.sendMessage(ChatColor.RED + "Please enter a value at or above 0"); 
 					else{
-						eListener.setcommunalBounty(args[0], Integer.parseInt(args[1])); //Going to have to change this. If the player is offline, it will throw an error. 
+						eListener.setcommunalBounty(args[0], new BigDecimal(Integer.parseInt(args[1]))); //Going to have to change this. If the player is offline, it will throw an error. 
 						player.sendMessage(ChatColor.GREEN + "Set " + args[0] +"'s bounty to " + args[1]);
 					} 
 					return true; 
@@ -282,7 +295,7 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 				try{
 					if(Integer.parseInt(args[1]) < 0) player.sendMessage(ChatColor.RED + "Please enter a value at or above 0");
 					else{
-						eListener.setplayersetBounty(args[0], Integer.parseInt(args[1])); //Going to have to change this. If the player is offline, it will throw an error. 
+						eListener.setplayersetBounty(args[0],new BigDecimal(Integer.parseInt(args[1]))); 
 						player.sendMessage(ChatColor.GREEN + "Set " + args[0] +"'s bounty to " + args[1]);
 					} 
 				return true; 
@@ -319,7 +332,7 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 				try{
 				if(Integer.parseInt(args[1]) <= 0) player.sendMessage(ChatColor.RED + "Please enter a value above 0");
 				else{
-					eListener.addtocommunalBounty(args[0], Integer.parseInt(args[1])); 
+					eListener.addtocommunalBounty(args[0],new BigDecimal(Integer.parseInt(args[1]))); 
 					player.sendMessage(ChatColor.GREEN + "Added " + args[1] + " to " + args[0]  + "'s bounty");
 					} 
 					return true;
@@ -357,7 +370,7 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 					if(Integer.parseInt(args[1]) <= 0) player.sendMessage(ChatColor.RED + "Please enter a value above 0");
 					else{
 					
-							eListener.addtoplayersetBounty(args[0], Integer.parseInt(args[1])); 
+							eListener.addtoplayersetBounty(args[0],new BigDecimal(Integer.parseInt(args[1]))); 
 							player.sendMessage(ChatColor.GREEN + "Added " + args[1] + " to " + args[0]  + "'s bounty");
 					
 					} 
@@ -414,7 +427,7 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 			for(Map.Entry<String, PlayerProfile> entry : saveData.getplayerList().entrySet()){
 				if(entry.getValue() != null) {
 					PlayerProfile p = entry.getValue();
-					if(p.gettotalBounty() > 0){
+					if(p.gettotalBounty().signum() > 0){
 						player.sendMessage(ChatColor.GREEN + p.getName() + " Communal: " + p.getcommunalBounty() + " Playeset: " + p.getplayersetBounty() + " Total: " + p.gettotalBounty());
 					}
 				}
@@ -463,77 +476,70 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 			Economy econ = eListener.getEcon(); 
 			boolean useEcon = config.getuseEcon();   
 			PlayerProfile p = saveData.getPlayerProfile(player.getName()); //Get a playerProfile object 
-			int amount; 
+			BigDecimal amount;
 		
 			try{
-				amount = Integer.parseInt(args[1]);
-			}
-		
-			catch(Exception e){
+				amount = new BigDecimal(Integer.parseInt(args[1]));
+			}catch(Exception e){
 				player.sendMessage(ChatColor.RED + "Please enter a number"); 
 				return false; 
 			}
 			
 		
 			if(useEcon){
-				
 				if(args[0].equals("c")){
 						
-					if(p.getplayersetBounty() < amount){
+					if(p.getplayersetBounty().compareTo(amount) == -1){
 						amount = p.getcommunalBounty();  //If a person tries to pay more than what their bounty is, only make their bounty 0. 
 					}
 					
-					if(!econ.has(player.getName(), amount)){
+					if(!econ.has(player.getName(), amount.doubleValue())){
 						player.sendMessage(ChatColor.RED + "You do not have enough money"); 
 						return true; 
 					}
-					p.setcommunalBounty(p.getcommunalBounty() - amount); //Subtract the amount the player wants from their bounty. 
-					econ.withdrawPlayer(player.getName(),(double)amount); //Withdraws from the player's account. 
+					p.setcommunalBounty(p.getcommunalBounty().subtract(amount)); //Subtract the amount the player wants from their bounty. 
+					econ.withdrawPlayer(player.getName(),amount.doubleValue()); //Withdraws from the player's account. 
 					player.sendMessage(ChatColor.GREEN + "You paid " + amount + " on your bounty.\nYour current communal bounty is " + p.getcommunalBounty()); 
 					return true; 
 				} 
 					
 				else if(args[0].equalsIgnoreCase("ps")){
 						
-					if(p.getplayersetBounty() < amount){
+					if(p.getplayersetBounty().compareTo(amount) == -1){
 						amount = p.getplayersetBounty(); 
 					}
 					
-					if(!econ.has(player.getName(), amount)){
+					if(!econ.has(player.getName(), amount.doubleValue())){
 						player.sendMessage(ChatColor.RED + "You do not have enough money"); 
 						return true; 
 					}
-					p.setplayersetBounty(p.getplayersetBounty() - amount); 
-					econ.withdrawPlayer(player.getName(),(double)amount); //Withdraws from the player's account. 
+					p.setplayersetBounty(p.getplayersetBounty().subtract(amount)); 
+					econ.withdrawPlayer(player.getName(),amount.doubleValue()); //Withdraws from the player's account. 
 					player.sendMessage(ChatColor.GREEN + "You paid " + amount + " on your bounty.\nYour current player set bounty is " + p.getplayersetBounty()); 
 					return true; 
 				}
 					
-				else return false; 
-							
-				
-				
-				
+				return false; 
 			
 			}
 		
 			else{
 				Inventory playerInv = player.getInventory(); //Creates a new item stack with the bounty, then checks to see if they have the amount listed. 
-				
+				int amountInt = amount.intValue();
 				if(args[0].equalsIgnoreCase("c")){
 					
-					if(p.getcommunalBounty() < amount){
+					if(p.getcommunalBounty().intValue() < amountInt){
 						amount = p.getcommunalBounty(); 
 					}
 					
-					ItemStack cost = new ItemStack(Material.GOLD_INGOT,amount);
+					ItemStack cost = new ItemStack(Material.GOLD_INGOT,amountInt);
 					
-					if(!playerInv.contains(Material.GOLD_INGOT, amount)){
+					if(!playerInv.contains(Material.GOLD_INGOT, amountInt)){
 						player.sendMessage(ChatColor.RED + "You do not have enough money"); 
 						return true; 
 					}
 					
-					p.setcommunalBounty(p.getcommunalBounty() - amount); 
+					p.setcommunalBounty(new BigDecimal(p.getcommunalBounty().intValue() - amountInt));
 					playerInv.remove(cost); 
 					player.sendMessage(ChatColor.GREEN + "You paid " + amount + " on your bounty.\nYour current communal bounty is " + p.getcommunalBounty()); 
 					return true; 
@@ -541,17 +547,17 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 			
 				if(args[0].equalsIgnoreCase("ps")){
 					
-					if(p.getplayersetBounty() < amount){
+					if(p.getplayersetBounty().intValue() < amountInt){
 						amount = p.getplayersetBounty(); 
 					}
 					
-					ItemStack cost = new ItemStack(Material.GOLD_INGOT,(int)amount);
-					if(!playerInv.contains(Material.GOLD_INGOT, amount)){
+					ItemStack cost = new ItemStack(Material.GOLD_INGOT,(int)amountInt);
+					if(!playerInv.contains(Material.GOLD_INGOT, amountInt)){
 						player.sendMessage(ChatColor.RED + "You do not have enough money"); 
 						return false; 
 					}  
 					
-					p.setplayersetBounty(p.getplayersetBounty() - amount); 
+					p.setplayersetBounty(new BigDecimal(p.getplayersetBounty().intValue() - amountInt)); 
 					playerInv.remove(cost); 
 					player.sendMessage(ChatColor.GREEN + "You paid " + amount + " on your bounty.\nYour current player set bounty is " + p.getplayersetBounty()); 
 					return true; 

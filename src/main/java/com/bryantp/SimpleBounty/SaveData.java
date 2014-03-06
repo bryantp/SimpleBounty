@@ -7,13 +7,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import lib.PatPeter.SQLibrary.MySQL;
 
@@ -21,6 +21,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import com.bryantp.SimpleBounty.base.IDatabaseHandler;
+import com.bryantp.SimpleBounty.resource.SimpleBountyResource;
 
 /**
  * Responsible for the handling Data including saving and retrieval. 
@@ -29,9 +30,9 @@ import com.bryantp.SimpleBounty.base.IDatabaseHandler;
  */
 public class SaveData {
 		
-	private static File saveFile = new File("plugins/SimpleBounty/data.dat");
-	private static File directory = new File("plugins/SimpleBounty");
-	private static File configFile = new File("plugins/SimpleBounty/config.yml");
+	private static File saveFile = new File(SimpleBountyResource.saveFile);
+	private static File directory = new File(SimpleBountyResource.directory);
+	private static File configFile = new File(SimpleBountyResource.configFile);
 	
 	private boolean useSQL; 
 	private IDatabaseHandler databaseHandler;
@@ -62,37 +63,37 @@ public class SaveData {
 	public void convertDB(Player player){
 		//Code to convert from Flatfile to SQL and vice versa. 
 		if(saveFile.exists() && useSQL){
-			SimpleBounty.logger.log(Level.INFO,"Converting flatfile to SQL");
+			SimpleBounty.logger.log(Level.INFO,SimpleBountyResource.getConvertingToSQLMessage());
 			FileInputStream input;
 			try {
 				input = new FileInputStream(saveFile);
 				ObjectInputStream objStream = new ObjectInputStream(input); 
 				Object inputObj = objStream.readObject();
 				databaseHandler.push((HashMap<String, PlayerProfile>) inputObj);
-				player.sendMessage(ChatColor.GREEN + "Converted FlatFile to SQL"); 
+				player.sendMessage(SimpleBountyResource.positiveMessageColor + SimpleBountyResource.getConvertedToSQLMessageMessage()); 
 				input.close();
 				objStream.close();
 			} catch (Exception e) {
-				player.sendMessage(ChatColor.RED + "Error converting to SQL"); 
+				player.sendMessage(SimpleBountyResource.negativeMessageColor + SimpleBountyResource.getErrorConvertingToSQLMessage()); 
 				e.printStackTrace();
 			}
-			//saveFile.delete(); Don't delete it just yet. 
-			if(saveFile.renameTo(new File("plugins/SimpleBounty/data.dat.OLD"))) player.sendMessage(ChatColor.GREEN + "Renamed old file to data.dat.OLD");  
-			else player.sendMessage(ChatColor.RED + "Unable to rename old file"); 
 			
-		}
-		
-		else if(!saveFile.exists() && !useSQL){
-			SimpleBounty.logger.log(Level.INFO,"Converting SQL to flatfile");
+			if(saveFile.renameTo(new File(SimpleBountyResource.saveFileRename))){
+				player.sendMessage(SimpleBountyResource.positiveMessageColor + SimpleBountyResource.getRenameFlatFileSuccessMessage());  
+			}else{
+				player.sendMessage(SimpleBountyResource.negativeMessageColor + SimpleBountyResource.getRenameFlatFileFailure()); 
+			}
+			
+		}else if(!saveFile.exists() && !useSQL){
+			SimpleBounty.logger.log(Level.INFO,SimpleBountyResource.getConvertingToFlatFileMessage());
 			playerList = databaseHandler.pull();
 			try {
 				saveFile.createNewFile();
 				save(); 
-				player.sendMessage(ChatColor.GREEN + "Converted SQL to FlatFile"); 
+				player.sendMessage(SimpleBountyResource.positiveMessageColor+ SimpleBountyResource.getConvertedToFlatFileMessage()); 
 
 			} catch (IOException e) {
-				player.sendMessage(ChatColor.RED + "Error converting to FlatFile"); 
-
+				player.sendMessage(SimpleBountyResource.negativeMessageColor + SimpleBountyResource.getErrorConvertingToFlatFileMessage()); 
 				e.printStackTrace();
 			} 
 		}
@@ -134,7 +135,7 @@ public class SaveData {
 	@SuppressWarnings("unchecked")
 	public void load(){
 		if(useSQL){
-			playerList = databaseHandler.pull(); //Return a HashMap Object. 
+			playerList = databaseHandler.pull();
 		}
 		else{
 			try {
@@ -229,7 +230,7 @@ public class SaveData {
 	public int getNumberOfBounties(){
 		int num = 0;
 		for(Map.Entry<String, PlayerProfile> entry : playerList.entrySet()){
-			if(entry.getValue().gettotalBounty() > 0){
+			if(entry.getValue().gettotalBounty().signum() > 0){
 				num++;
 			}
 		}
@@ -291,7 +292,7 @@ public class SaveData {
 			}
 			
 			if(!mysql.isTable("simplebounty")){
-				String create = "CREATE TABLE simplebounty (id INT NOT NULL AUTO_INCREMENT, name VARCHAR(255), communal_bounty DOUBLE, ps_bounty DOUBLE,primary key (id),UNIQUE (id),UNIQUE (name))"; 
+				String create = SimpleBountyResource.createTableSQL;
 				createTable(create);
 			}
 		}
@@ -303,10 +304,8 @@ public class SaveData {
 				mysql.query(ps);
 				return true;
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
 			return false;
 		}
 		
@@ -316,12 +315,12 @@ public class SaveData {
 		 */
 		public void push(Map<String,PlayerProfile> data){
 			String name = null;
-			double communalBounty = 0, psBounty = 0; 
+			BigDecimal communalBounty = BigDecimal.ZERO, psBounty = BigDecimal.ZERO; 
 			for(Map.Entry<String, PlayerProfile> entry : data.entrySet()){
 				name = entry.getKey(); 
 				 communalBounty = entry.getValue().getcommunalBounty();
 				 psBounty = entry.getValue().getplayersetBounty(); 
-				 String updateQuery = "INSERT INTO simplebounty (name, communal_bounty, ps_bounty) VALUES (" + "'" + name + "'" + "," + communalBounty + ", " + psBounty + ") ON DUPLICATE KEY UPDATE communal_bounty =" + communalBounty + ", ps_bounty =" + psBounty;
+				 String updateQuery = String.format(SimpleBountyResource.updateOrInsertMySQL,name,communalBounty,psBounty,communalBounty,psBounty);
 				 PreparedStatement ps;
 				 try {
 					 ps = mysql.prepare(updateQuery);
@@ -337,25 +336,22 @@ public class SaveData {
 		 */
 		public Map<String, PlayerProfile> pull(){
 			Map<String, PlayerProfile> returnMap = new HashMap<String, PlayerProfile>();
-			
+			PreparedStatement ps;
 			try {
-				ResultSet data = mysql.query("SELECT * FROM simplebounty");
+				ps = mysql.prepare(SimpleBountyResource.getAllFromMySQL);
+				ResultSet data = mysql.query(ps);
 				data.beforeFirst(); 
 			
 				while(data.next()){
 					PlayerProfile player = new PlayerProfile(data.getString(2)); 
-					player.setcommunalBounty(Integer.parseInt(data.getString(3)));
-					player.setplayersetBounty(Integer.parseInt(data.getString(4)));
-					
+					player.setcommunalBounty(new BigDecimal(data.getString(3)));
+					player.setplayersetBounty(new BigDecimal(data.getString(4)));
 					returnMap.put(data.getString(2), player);  
-				 } 
-				
-						
+				 } 	
 			} catch (SQLException e) {
 				e.printStackTrace();
 			} 
 			return returnMap;
-			
 		}
 		
 		/** 

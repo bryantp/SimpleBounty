@@ -6,3 +6,15 @@ Changelog Simplebounty
 - Consolidated the Bounty list to one class. 
 - Started to implement SqLite
 - Updated to Bukkit 1.7.2
+
+3/5/14
+- Externalized all String
+- Moved a lot of hardcoded String to SimpleBountyResource Class
+
+
+TODO:
+
+Add PreparedStatements to every SQL Query
+Add features that were suggested
+Test Everything some more
+Make Settings more clear

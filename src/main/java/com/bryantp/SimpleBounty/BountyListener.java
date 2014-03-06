@@ -1,5 +1,6 @@
 package com.bryantp.SimpleBounty;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
@@ -25,6 +26,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
+import com.bryantp.SimpleBounty.resource.SimpleBountyResource;
+
 import net.milkbowl.vault.economy.Economy; 
 import net.milkbowl.vault.economy.EconomyResponse; 
 
@@ -32,7 +35,7 @@ import net.milkbowl.vault.economy.EconomyResponse;
 public class BountyListener implements Listener{
 
 	private SimpleBounty sb = null; 
-	private int increment, decrement; 
+	private BigDecimal increment, decrement; 
 	private boolean  showkillerMessage, showvictimMessage;
 	
 	private SaveData saveData;
@@ -41,13 +44,25 @@ public class BountyListener implements Listener{
 	private boolean useSQL; 
 	private boolean incrementnoBounty;
 	private boolean communalEnable;
+	private Config conf;
 	 
 	
 	
-	public BountyListener(Economy econ, SimpleBounty sb){
+	public BountyListener(Economy econ, SimpleBounty sb, Config conf){
 		this.econ = econ; 
 		this.sb = sb; 
-		 
+		this.conf = conf;
+	}
+	
+	public void setConfigVariables(){
+		this.increment = conf.getIncrement();
+		this.decrement = conf.getDecrement();
+		this.showkillerMessage = conf.getshowkillerMessage();
+		this.showvictimMessage = conf.getshowkillerMessage();
+		this.useSQL = conf.getuseSQL();
+		this.useEcon = conf.getuseEcon();
+		this.incrementnoBounty = conf.getincrementnoBounty();
+		this.communalEnable = conf.getcommunalEnable();
 	}
 	
 	public SaveData getSaveData(){
@@ -74,19 +89,7 @@ public class BountyListener implements Listener{
 	
 	public void setUseEcon(boolean useEcon){
 		this.useEcon = useEcon;
-	}
-	
-	public void setConfig(Config conf){ 
-		useEcon= conf.getuseEcon(); 
-		useSQL = conf.getuseSQL();
-		incrementnoBounty = conf.getincrementnoBounty(); 
-		communalEnable = conf.getcommunalEnable(); 
-		increment = conf.getIncrement(); 
-		decrement = conf.getDecrement();
-		showvictimMessage = conf.getshowvictimMessage();  
-		showkillerMessage = conf.getshowkillerMessage();
-	}
-	
+	}	
 
 	/**
 	 * Checks to see if the player has a profile yet. If they don't, we create them one. 
@@ -153,78 +156,65 @@ public class BountyListener implements Listener{
 		PlayerProfile killerProfile = saveData.getPlayerProfile(killer.getName());
 		PlayerProfile victimProfile = saveData.getPlayerProfile(victim.getName());
 		
-		int bounty = saveData.getPlayerProfile(victim.getName()).gettotalBounty();
+		BigDecimal bounty = saveData.getPlayerProfile(victim.getName()).gettotalBounty();
 		 
-		if(bounty > 0){ //Only gives money if the bounty is greater than 0. Stopped a bug where 1 gold was given even if bounty was 0. 
+		if(bounty.signum() > 0){ //Only gives money if the bounty is greater than 0. Stopped a bug where 1 gold was given even if bounty was 0. 
 			//Do the new transaction here. 
-			transactionHandler(killer.getName(), bounty); 
+			transactionHandler(killer.getName(), BigDecimal.ZERO); 
 		 } 
 		
 		
 		//recalculate the bounty of the victim
-		int newVictimBounty = victimProfile.getcommunalBounty() - decrement;
-		if(newVictimBounty < 0){
-			newVictimBounty = 0;  
+		BigDecimal newVictimBounty = victimProfile.getcommunalBounty().subtract(decrement);
+		if(newVictimBounty.signum() < 0){
+			newVictimBounty = BigDecimal.ZERO;  
 		}
 			
 		//recalculate the bounty of the killer. Look into this logic more. 
-		int victimTotalBounty = victimProfile.gettotalBounty();
-		if(incrementnoBounty && victimTotalBounty <= 0){
-			int newKillerBounty = killerProfile.getcommunalBounty() + increment; //Old bounty + increment
-			if(newKillerBounty < 0){
-				newKillerBounty = 0; //Makes sure that the bounty cannot go below 0. 
+		BigDecimal victimTotalBounty = victimProfile.gettotalBounty();
+		if(incrementnoBounty && victimTotalBounty.signum() <= 0){
+			BigDecimal newKillerBounty = killerProfile.getcommunalBounty().add(increment); //Old bounty + increment
+			newKillerBounty = (newKillerBounty.signum() < 0) ? BigDecimal.ZERO : newKillerBounty; //Makes sure that the bounty cannot go below 0. 
+		
+			killerProfile.setcommunalBounty(newKillerBounty);
+			if(showkillerMessage){
+				killer.sendMessage(String.format(SimpleBountyResource.getVictimMessage(), victim.getName(), bounty.doubleValue())); 
 			}
 			
-			killerProfile.setcommunalBounty(newKillerBounty);
-			if(showkillerMessage) killer.sendMessage("You killed " + victim.getName() + " for a bounty of " + bounty); 
-			if(showvictimMessage) victim.sendMessage("You were killed by " + killer.getName() + " for a bounty of " + bounty);
+			if(showvictimMessage){
+				victim.sendMessage(String.format(SimpleBountyResource.getKillerMessage(),killer.getName(),bounty.doubleValue()));
+			}
 		} 
 		
 		else if(!incrementnoBounty){
-			int newKillerBounty = killerProfile.getcommunalBounty() + increment; //Old bounty + increment
-			newKillerBounty = (newKillerBounty < 0) ?  0 : newKillerBounty;
+			BigDecimal newKillerBounty = killerProfile.getcommunalBounty().add(increment); //Old bounty + increment
+			newKillerBounty = (newKillerBounty.signum() < 0) ?  BigDecimal.ZERO : newKillerBounty;
 
 			killerProfile.setcommunalBounty(newKillerBounty);
-			if(showkillerMessage) killer.sendMessage("You killed " + victim.getName() + " for a bounty of " + bounty); 
-			if(showvictimMessage) victim.sendMessage("You were killed by " + killer.getName() + " for a bounty of " + bounty);
+			if(showkillerMessage){
+				killer.sendMessage(String.format(SimpleBountyResource.getVictimMessage(), victim.getName(), bounty.doubleValue())); 
+			}
+			
+			if(showvictimMessage){
+				victim.sendMessage(String.format(SimpleBountyResource.getKillerMessage(),killer.getName(),bounty.doubleValue()));
+			}
 		}
 		
 		else{
-			killer.sendMessage(ChatColor.GREEN + "A bounty was not placed on you."); 
+			killer.sendMessage(SimpleBountyResource.positiveMessageColor + SimpleBountyResource.getBountyNotPlacedMessage()); 
 		}
 		
 		victimProfile.setcommunalBounty(newVictimBounty); //Sets the communal bounty of the victim. This always changes regardless of settings. 
-		victimProfile.setplayersetBounty(0); //Set to 0 because the killer is going to receive the bounty. 
+		victimProfile.setplayersetBounty(BigDecimal.ZERO); //Set to 0 because the killer is going to receive the bounty. 
 	}
 	
-	
-	/**
-	 * Sets the configuration parameters 
-	 * @param increment
-	 * @param decrement
-	 * @param showvictimMessage
-	 * @param showkillerMessage
-	 */
-	public void configSet(boolean  incrementnoBounty, boolean  communalEnable, int increment ,
-			int decrement, boolean  showvictimMessage, boolean  showkillerMessage, 
-			boolean  useSQL, boolean  useEcon, boolean  psEnable){
-		this.increment = increment;
-		this.decrement = decrement;
-		this.showvictimMessage = showvictimMessage; 
-		this.showkillerMessage = showkillerMessage;
-		this.useSQL= useSQL; 
-		this.useEcon = useEcon; 
-		this.incrementnoBounty = incrementnoBounty; 
-		this.communalEnable = communalEnable; 
-		 
-	}
 	
 	/**
 	 * Returns the players total bounty 
 	 * @param player
 	 * @return
 	 */
-	public int getplayerBounty(String player){
+	public BigDecimal getplayerBounty(String player){
 		return saveData.getPlayerProfile(player).gettotalBounty();
 	}
 	
@@ -233,7 +223,7 @@ public class BountyListener implements Listener{
 	 * @param player
 	 * @param d
 	 */
-	public void setcommunalBounty(String player,int d){
+	public void setcommunalBounty(String player,BigDecimal d){
 		saveData.getPlayerProfile(player).setcommunalBounty(d); 
 	}
 	
@@ -242,7 +232,7 @@ public class BountyListener implements Listener{
 	 * @param player
 	 * @param bounty
 	 */
-	public void setplayersetBounty(String player, int bounty){
+	public void setplayersetBounty(String player, BigDecimal bounty){
 		saveData.getPlayerProfile(player).setplayersetBounty(bounty);
 	}
 		
@@ -251,7 +241,7 @@ public class BountyListener implements Listener{
 	 * @param player
 	 * @param increment
 	 */
-	public void addtocommunalBounty(String player, int increment){
+	public void addtocommunalBounty(String player, BigDecimal increment){
 		saveData.getPlayerProfile(player).addcommunalBounty(increment);
 	}
 	
@@ -260,7 +250,7 @@ public class BountyListener implements Listener{
 	 * @param player
 	 * @param increment
 	 */
-	public void addtoplayersetBounty(String player, int increment){
+	public void addtoplayersetBounty(String player, BigDecimal increment){
 		saveData.getPlayerProfile(player).addplayersetBounty(increment); 
 	}
 	
@@ -270,20 +260,23 @@ public class BountyListener implements Listener{
 	 * @param victim
 	 * @param bounty
 	 */
-	public void placeBounty(Player placer, String victim, int bounty){
+	public void placeBounty(Player placer, String victim, BigDecimal bounty){
 		
 		if(placebountyHandler(placer, victim, bounty)){ 
 			
-			if(showkillerMessage) placer.sendMessage(ChatColor.DARK_GRAY + "Placed a bounty of " + bounty + " on " + victim); //Toggles the messages that the killer sees 
+			if(showkillerMessage){
+				placer.sendMessage(SimpleBountyResource.positiveMessageColor + String.format(SimpleBountyResource.getPlaceBountyMessageOnPlayer(),bounty.doubleValue(),victim)); 
+			}
+			
 			Player victimPlayer = Bukkit.getPlayer(victim);
-			if(victimPlayer != null){ //Doesn't try and send a message if the player is Null. 
-				if(showvictimMessage) victimPlayer.sendMessage(ChatColor.DARK_GRAY + placer.getName() + " placed a bounty of " + bounty + " on you"); //Toggles the message that the victim sees. 
+			if(victimPlayer != null){
+				if(showvictimMessage){
+					victimPlayer.sendMessage(SimpleBountyResource.negativeMessageColor + String.format(SimpleBountyResource.getBountyPlacedOnYouMessage(),placer.getName(),bounty.doubleValue())); 
+				}
 			} 
 			 
-			}
-		
-		else{
-			placer.sendMessage(ChatColor.RED + "Not enough money to place bounty"); 
+		}else{
+			placer.sendMessage(SimpleBountyResource.negativeMessageColor + SimpleBountyResource.getNotEnoughMoneyToPlaceBountyMessage()); 
 		}
 	}
 	
@@ -308,7 +301,8 @@ public class BountyListener implements Listener{
 			
 			if(unSortedList.size() != 0){
 				for(int i = 0; i < unSortedList.size(); i++){
-					if(!(unSortedList.get(i).gettotalBounty() == 0)){
+					BigDecimal totalBounty = unSortedList.get(i).gettotalBounty();
+					if(!totalBounty.equals(SimpleBountyResource.SimpleBountyBigDecimalZero)){
 						output.add(unSortedList.get(i).getName() + ": " + unSortedList.get(i).gettotalBounty()); 
 					}
 				}
@@ -331,19 +325,17 @@ public class BountyListener implements Listener{
 	 * @param recipient
 	 * @param amount
 	 */
-	public void transactionHandler(String recipient, int amount){
+	public void transactionHandler(String recipient, BigDecimal amount){
 		
-		if(!useEcon){//If not using the economy system. 
+		if(!useEcon){ 
 			PlayerInventory inventory = Bukkit.getPlayer(recipient).getInventory();
-			ItemStack goldStack = new ItemStack(Material.GOLD_INGOT,amount); 
+			ItemStack goldStack = new ItemStack(Material.GOLD_INGOT,amount.intValue()); 
 			inventory.addItem(goldStack);
-		}
-		
-		else{
-			EconomyResponse r = econ.depositPlayer(recipient,(double)amount); 
+		}else{
+			EconomyResponse r = econ.depositPlayer(recipient,amount.doubleValue()); 
 			
 			if(!r.transactionSuccess()){
-				SimpleBounty.logger.log(Level.SEVERE,"There was an error with the transaction for " + recipient + " " + r.errorMessage);
+				SimpleBounty.logger.log(Level.SEVERE,String.format(SimpleBountyResource.getTransactionErrorMessage(),recipient,r.errorMessage));
 			}
 		}
 		
@@ -356,12 +348,14 @@ public class BountyListener implements Listener{
 	 * @param amount
 	 * @return
 	 */
-	public boolean placebountyHandler(Player placer, String victim, int amount){
+	public boolean placebountyHandler(Player placer, String victim, BigDecimal amount){
 		PlayerProfile victimProfile = saveData.getPlayerProfile(victim);
 		if(!useEcon){
 			Inventory placerInv = placer.getInventory(); //Creates a new item stack with the bounty, then checks to see if they have the amount listed. 
-			ItemStack cost = new ItemStack(Material.GOLD_INGOT,amount);
-			if(!placerInv.contains(Material.GOLD_INGOT, amount)) { return false; }  
+			ItemStack cost = new ItemStack(Material.GOLD_INGOT,amount.intValue());
+			if(!placerInv.contains(Material.GOLD_INGOT, amount.intValue())){ 
+				return false;
+			}  
 			
 			victimProfile.addplayersetBounty(amount);
 			placerInv.removeItem(cost); 
@@ -371,14 +365,14 @@ public class BountyListener implements Listener{
 		
 		else{
 			
-			if(!econ.has(placer.getName(), (double)amount)){ 
+			if(!econ.has(placer.getName(), amount.doubleValue())){ 
 				return false; 
 			}
 			
 			
-			EconomyResponse placerEcon = econ.withdrawPlayer(placer.getName(),(double)amount);
+			EconomyResponse placerEcon = econ.withdrawPlayer(placer.getName(),amount.doubleValue());
 			if(!placerEcon.transactionSuccess()){
-				SimpleBounty.logger.log(Level.SEVERE,"There was an error with the transaction for " + placer.getName() + " " + placerEcon.errorMessage);
+				SimpleBounty.logger.log(Level.SEVERE,String.format(SimpleBountyResource.getTransactionErrorMessage(), victim, placerEcon.errorMessage));
 				return false; 
 			}
 			

@@ -1,6 +1,7 @@
 package com.bryantp.SimpleBounty;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.logging.Level;
 
@@ -9,6 +10,8 @@ import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.RegisteredServiceProvider;
+
+import com.bryantp.SimpleBounty.resource.SimpleBountyResource;
 
 public class Config {
 	
@@ -23,8 +26,8 @@ public class Config {
 	private boolean incrementnoBounty;
 	private boolean communalEnable, psEnable;;
 	private boolean showvictimMessage,showkillerMessage; 
-	private int increment, decrement; 
-	private int max,min; 
+	private BigDecimal increment, decrement; 
+	private BigDecimal max,min; 
 	
 	//Vault
 	private static Economy econ = null;
@@ -42,17 +45,16 @@ public class Config {
 	
 	public Config(SimpleBounty simplebounty){
 		this.simplebounty = simplebounty;
-		
 		this.simplebounty.getConfig().options().copyDefaults(true);
 		this.config = this.simplebounty.getConfig();
 		this.incrementnoBounty = config.getBoolean("communalbounty.incrementnobounty");
 		this.forcegoldecon = config.getBoolean("forcegoldecon");
 		this.showvictimMessage = config.getBoolean("showvictimmessages");
 		this.showkillerMessage = config.getBoolean("showkillermessages");
-		this.increment = config.getInt("communalbounty.increment");
-		this.decrement = config.getInt("communalbounty.decrement"); 
-		this.max = config.getInt("psbounty.max");
-		this.min = config.getInt("psbounty.min"); 
+		this.increment = new BigDecimal(config.getDouble("communalbounty.increment")).setScale(2,SimpleBountyResource.rounding);
+		this.decrement = new BigDecimal(config.getDouble("communalbounty.decrement")).setScale(2, SimpleBountyResource.rounding); 
+		this.max = new BigDecimal(config.getDouble("psbounty.max")).setScale(2,SimpleBountyResource.rounding);
+		this.min = new BigDecimal(config.getDouble("psbounty.min")).setScale(2,SimpleBountyResource.rounding); 
 		this.communalEnable = config.getBoolean("communalbounty.enable");
 		this.psEnable = config.getBoolean("psbounty.enable");
 		this.useSQL = config.getBoolean("mySQL.enabled");
@@ -65,27 +67,30 @@ public class Config {
 			this.password =  config.getString("mySQL.password");
 			this.useSQL = config.getBoolean("mySQL.enabled");
 		}
-		
+	}
+	
+	/**
+	 * Sets up the Economy and Permissions and checks the Config directory
+	 * @return
+	 */
+	public boolean setup(){
 		if(!setupEconomy()){
-			SimpleBounty.logger.log(Level.INFO,"No economy system detected, defaulting to gold ignots");
+			SimpleBounty.logger.log(Level.INFO,SimpleBountyResource.getNoEconomyFoundMessage());
 			useEcon = false; 
 		}
 		
-		
 		if(!setupPermissions()){
-	        SimpleBounty.logger.info(String.format("[%s] - Disabled due to no Vault dependency found!", simplebounty.getDescription().getName()));
+	        SimpleBounty.logger.info(String.format(SimpleBountyResource.getPluginDisabledDependencyMessage(), simplebounty.getDescription().getName()));
 	        simplebounty.getServer().getPluginManager().disablePlugin(simplebounty);
-	        return;
+	        return false;
 	    }
 		  
-		if(forcegoldecon) useEcon = false;
-		  
-	
-		  
+		if(forcegoldecon){
+			useEcon = false;
+		}
 		  
 		if(directory.exists() && directory.isDirectory()){
 			SimpleBounty.logger.log(Level.INFO,"Loading Data");
-			//bountylistener.load();  Load the save data separate. 
 			config.get("plugins/SimpleBounty/config.yml"); 
 		}
 			
@@ -95,9 +100,13 @@ public class Config {
 			simplebounty.saveConfig();
 		}
 		
+		return true;
 	}
 	
-	
+	/**
+	 * Sets up the economy system for the plugin
+	 * @return
+	 */
 	public boolean setupEconomy(){
 		if(simplebounty.getServer().getPluginManager().getPlugin("Vault") == null){
 			return false; 
@@ -110,8 +119,10 @@ public class Config {
 		
 	}
 	
-	
-	
+	/**
+	 * Sets up the permissions for the commands
+	 * @return
+	 */
 	public boolean setupPermissions(){
 		if(simplebounty.getServer().getPluginManager().getPlugin("Vault") == null){
 			return false; 
@@ -120,10 +131,6 @@ public class Config {
 		perms = rsp.getProvider();
 		return perms != null; 
 	}
-	
-	
-	
-	
 	
 	public boolean getforcegoldecon(){
 		return forcegoldecon; 
@@ -157,21 +164,25 @@ public class Config {
 		return showkillerMessage; 
 	}
 	
-	public int getIncrement(){
+	public BigDecimal getIncrement(){
 		return increment;
 	}
 	
-	public int getDecrement(){
+	public BigDecimal getDecrement(){
 		return decrement; 
 	}
 	
-	public int getMax(){
-		if(max < 0) return 0; 
+	public BigDecimal getMax(){
+		if(max.signum() < 0) {
+			return BigDecimal.ZERO; 
+		}
 		return max;
 	}
 	
-	public int getMin(){
-		if(min < 0) return 0;
+	public BigDecimal getMin(){
+		if(min.signum() < 0) {
+			return BigDecimal.ZERO;
+		}
 		return min; 
 	}
 	

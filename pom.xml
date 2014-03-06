@@ -4,11 +4,13 @@
 
 	<groupId>com.bryantp</groupId>
 	<artifactId>SimpleBounty</artifactId>
-	<version>1.5.1-SNAPSHOT</version>
+	<version>1.6.0.8-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	
 	<name>SimpleBounty</name>
 	<url>http://maven.apache.org</url>
+	
+	
 
 	<properties>
 	  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -27,6 +29,17 @@
 			<url>http://repo.dakanilabs.com/content/repositories/public</url>
 		</repository>
 	</repositories>
+	
+	<pluginRepositories>
+    	<pluginRepository>
+        	<id>autoincrement-versions-maven-plugin</id>
+        	<name>autoincrement-versions-maven-plugin</name>
+        	<url>http://autoincrement-versions-maven-plugin.googlecode.com/svn/repo</url>
+        	<snapshots>
+            	<enabled>true</enabled>
+        	</snapshots>
+    	</pluginRepository>
+	</pluginRepositories>
 
 	  
 	<build>
@@ -42,14 +55,23 @@
 	    	</plugin>
 	    	
 	    	<plugin>
-      			<groupId>org.apache.maven.plugins</groupId>
-      			<artifactId>maven-compiler-plugin</artifactId>
-      			<version>3.1</version>
-      			<configuration>
-        			<debug>true</debug>
-      			</configuration>
-    </plugin>
-	    	
+	    		<groupId>org.codehaus.mojo</groupId>
+        		<artifactId>autoincrement-versions-maven-plugin</artifactId>
+        		<version>2.0-SNAPSHOT</version>
+        		<executions>
+                	<execution>
+                        <id>update-pom-versions</id>
+                        <goals>
+                                <goal>increment</goal>
+                                <goal>commit</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                                <autoIncrementVersion>true</autoIncrementVersion>
+                        </configuration>
+                	</execution>
+        		</executions>
+        	</plugin>
 		</plugins>
 		
 		<resources>
@@ -58,9 +80,45 @@
 				<includes>
 					<include>plugin.yml</include>
 					<include>config.yml</include>
+					<include>resources/en_US.prop</include>
 				</includes>
 			</resource>
 		</resources>
+		<pluginManagement>
+			<plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.codehaus.mojo
+										</groupId>
+										<artifactId>
+											autoincrement-versions-maven-plugin
+										</artifactId>
+										<versionRange>
+											[2.0-SNAPSHOT,)
+										</versionRange>
+										<goals>
+											<goal>increment</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 	</build>
 	
 	<dependencies>
@@ -74,16 +132,19 @@
 	  	    <groupId>org.bukkit</groupId>
 	  	    <artifactId>bukkit</artifactId>
 	  	    <version>1.7.2-R0.3</version>
+	  	    <scope>provided</scope>
 	    </dependency>
 	    <dependency>
 	  	    <groupId>net.milkbowl</groupId>
 	  	    <artifactId>vault</artifactId>
 	  	    <version>1.2.31</version>
+	  	     <scope>provided</scope>
 	    </dependency>
 	    <dependency>
 	  	    <groupId>lib.PatPeter</groupId>
 	  	    <artifactId>SQLibrary</artifactId>
 	  	    <version>7.1</version>
+	  	     <scope>provided</scope>
 	    </dependency>
 	    <dependency>
 	        <groupId>org.mockito</groupId>

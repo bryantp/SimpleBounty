@@ -1,56 +1,59 @@
 package com.bryantp.SimpleBounty;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+import com.bryantp.SimpleBounty.resource.SimpleBountyResource;
 
 public class PlayerProfile implements Serializable, Comparable<PlayerProfile>{
 	
 	
 	private static final long serialVersionUID = 1L;
+	
 	/**
 	 * Profile object of a player and their bounty
 	 */
 	
 	private String name;
-	private int communalBounty,playersetBounty;
+	private BigDecimal communalBounty,playersetBounty;
 	
 	public PlayerProfile(String name){
 		this.name = name;
-		communalBounty = 0;
-		playersetBounty = 0; 
-	
-		
+		communalBounty = new BigDecimal("0").setScale(2, SimpleBountyResource.rounding);
+		playersetBounty = new BigDecimal("0").setScale(2,SimpleBountyResource.rounding); 	
 	}
 	
 	public String getName(){
 		return name;
 	}
 	
-	public int getcommunalBounty(){
+	public BigDecimal getcommunalBounty(){
 		return communalBounty; 
 	}
 	
-	public int getplayersetBounty(){
+	public BigDecimal getplayersetBounty(){
 		return playersetBounty; 
 	}
 	
-	public void addcommunalBounty(int bounty){
-		communalBounty += bounty;  
+	public void addcommunalBounty(BigDecimal bounty){
+		communalBounty = communalBounty.add(bounty);  
 	}
 	
-	public void addplayersetBounty(int bounty){
-		playersetBounty += bounty; 
+	public void addplayersetBounty(BigDecimal bounty){
+		playersetBounty = playersetBounty.add(bounty); 
 	}
 	
-	public int gettotalBounty(){
-		return communalBounty + playersetBounty; 
+	public BigDecimal gettotalBounty(){
+		return communalBounty.add(playersetBounty);
 		
 	}
 	
-	public void setcommunalBounty(int bounty){
+	public void setcommunalBounty(BigDecimal bounty){
 		communalBounty = bounty; 
 	}
 	
-	public void setplayersetBounty(int bounty){
+	public void setplayersetBounty(BigDecimal bounty){
 		playersetBounty = bounty; 
 	}
 
@@ -59,13 +62,7 @@ public class PlayerProfile implements Serializable, Comparable<PlayerProfile>{
 	public int compareTo(PlayerProfile obj) {
 		if(obj == null) return 0; 
 		
-		if(obj.gettotalBounty() > gettotalBounty()) return -1;
-		
-		else if(obj.gettotalBounty() < gettotalBounty()) return 1; 
-		
-		else return 0; 
-		
-		
+		return this.gettotalBounty().compareTo(obj.gettotalBounty());
 	}
 	
 	

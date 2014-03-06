@@ -1,6 +1,6 @@
 /**
  * @author Bryan YDD
- * @version 1.5
+ * @version 1.6
  * 
  *  A bounty plugin for Minecraft 
  */
@@ -15,35 +15,40 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.bryantp.SimpleBounty.resource.SimpleBountyResource;
+
 import net.milkbowl.vault.economy.Economy;
 
 public class SimpleBounty extends JavaPlugin{
 	
-	SaveData savedata = null;
-	Config conf;  
-	BountyListener bountyListener = null; 
-	SimpleBountyCommandExecutor exec = null;
-	public static final Logger logger = Logger.getLogger("SimpleBounty");
+	private SaveData savedata = null;
+	private Config conf;  
+	private BountyListener bountyListener = null; 
+	private SimpleBountyCommandExecutor exec = null;
 	private static Economy econ = null;
 	public static boolean  useEcon = true; 
 	public boolean forcegoldecon; 
 	public boolean useSQL; 
 	public boolean psEnable; 
 	
-	
+	public static final Logger logger = Logger.getLogger("SimpleBounty");
 	
 	public void onEnable(){
+		SimpleBountyResource.loadResources();
 		setupEconomy();
-		bountyListener = new BountyListener(econ, this);
 		conf = new Config(this);
-		savedata = new SaveData(conf); 
+		if(!conf.setup()){
+			return;
+		}
 		
-         
-		getLogger().info("Bounty has been enabled"); 
-        bountyListener.setSaveData(savedata);
-		bountyListener.setConfig(conf); 
+		savedata = new SaveData(conf); 
+		bountyListener = new BountyListener(econ,this,conf);
+		bountyListener.setConfigVariables();
 
-        this.getServer().getPluginManager().registerEvents(bountyListener,this); //Registers the DeathListener. 
+		getLogger().info(SimpleBountyResource.getPluginEnabledMessage()); 
+        bountyListener.setSaveData(savedata);
+
+        this.getServer().getPluginManager().registerEvents(bountyListener,this); 
 	
 		exec = new SimpleBountyCommandExecutor(this,bountyListener,conf, savedata);
 		getCommand("bountylist").setExecutor(exec);
@@ -60,7 +65,7 @@ public class SimpleBounty extends JavaPlugin{
 		getCommand("paybounty").setExecutor(exec); 
 		this.getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable(){ //Timed to reload the data every 5 minutes or so. 
 			public void run(){
-				logger.log(Level.INFO, "Reloading Data");
+				logger.log(Level.INFO, SimpleBountyResource.getReloadingDataMessage());
 				savedata.reload(); 
 			}
 		}, 6000L, 6000L); 
@@ -72,17 +77,9 @@ public class SimpleBounty extends JavaPlugin{
 	
 	public void onDisable(){
 		savedata.save();
-		getLogger().info("Bounty has been disabled"); 
-		
+		getLogger().info(SimpleBountyResource.getPluginDisabledMessage()); 
 	}
-	
-	/**
-	 * If the Database is enabled, it sets it up. 
-	 * @param 
-	 *  Determines if the use of a database should be forced. Used for the Conversion command
-	 */
-
-	
+		
 	/**
 	 * If there is an economy plugin enabled, sets up the economy plugin. 
 	 * @return
@@ -91,12 +88,14 @@ public class SimpleBounty extends JavaPlugin{
 		if(getServer().getPluginManager().getPlugin("Vault") == null){
 			return false; 
 		}
+		
 		RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class); 
-		if(rsp == null) return false; 
+		if(rsp == null){
+			return false; 
+		}
 		
 		econ = rsp.getProvider(); 
 		return econ != null; 
-		
 	}
 
 	
@@ -110,19 +109,17 @@ public class SimpleBounty extends JavaPlugin{
 		Player[] onLinePlayer = Bukkit.getServer().getOnlinePlayers(); 
 		
 		for(OfflinePlayer player : offPlayer){
-			if(player.getName().equalsIgnoreCase(playerName)) return true;
+			if(player.getName().equalsIgnoreCase(playerName)){
+				return true;
+			}
 		}
 		
 		for(Player player : onLinePlayer){
-			if(player.getName().equalsIgnoreCase(playerName)) return true; 
+			if(player.getName().equalsIgnoreCase(playerName)){
+				return true; 
+			}
 		}
 		
-		return false; 
-		
+		return false; 	
 	}
-	
-
-
-	
-	
 }

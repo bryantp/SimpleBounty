@@ -1,0 +1,23 @@
+#General user messages
+killerMessage=You killed %S for a bounty of %f
+victimMessage=You were killed by %s for a bounty of %f
+bountyNotPlaced=A bounty was not placed on you.
+placeBountyMessage=Placed a bounty of %f on %s
+gotBountyPlaced=%s placed a bounty of %f on you
+notEnoughMoneyPlaceBounty=Not enough money to place bounty
+convertedToFlatFile=Converted SQL to FlatFile
+convertedToSQL=Converted FlatFile to SQL
+
+#logger messages
+transactionError=There was an error with the transaction for %s %s
+convertingToFlatFile=Converting SQl to FlatFile
+convertingToSQL=Converting FlatFile to SQL
+errorConvertingToSQL=There was an error converting to SQL
+errorConvertingToFlatFile=There was an error converting to FlatFile
+renameFlatFileSuccess=Renamed old file to data.dat.OLD
+renameFlatFileFailure=Unable to rename old file
+pluginEnabled=SimpleBounty has been enabled
+pluginDisabled=SimpleBounty has been disabled
+reloadingData=Reloading Data
+noEconomyFound=No economy system detected, defaulting to gold ingots"
+pluginDisabledDependency=[%s] - Disabled due to no Vault dependency found!
