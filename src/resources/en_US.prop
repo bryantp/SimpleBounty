@@ -1,12 +1,13 @@
 #General user messages
-killerMessage=You killed %S for a bounty of %f
-victimMessage=You were killed by %s for a bounty of %f
+killerMessage=You killed %S for a bounty of %.2f
+victimMessage=You were killed by %s for a bounty of %.2f
 bountyNotPlaced=A bounty was not placed on you.
-placeBountyMessage=Placed a bounty of %f on %s
-gotBountyPlaced=%s placed a bounty of %f on you
+placeBountyMessage=Placed a bounty of %.2f on %s
+gotBountyPlaced=%s placed a bounty of %.2f on you
 notEnoughMoneyPlaceBounty=Not enough money to place bounty
 convertedToFlatFile=Converted SQL to FlatFile
 convertedToSQL=Converted FlatFile to SQL
+addedToBounty=Added %s to %s's Bounty
 
 #logger messages
 transactionError=There was an error with the transaction for %s %s
@@ -21,3 +22,6 @@ pluginDisabled=SimpleBounty has been disabled
 reloadingData=Reloading Data
 noEconomyFound=No economy system detected, defaulting to gold ingots"
 pluginDisabledDependency=[%s] - Disabled due to no Vault dependency found!
+pleaseEnterNumber=Please enter a number
+playerDoesntexist=Player doesn't exist
+noPermission=You do not have permission to do that

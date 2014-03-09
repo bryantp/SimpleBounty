@@ -46,7 +46,9 @@ permissions:
          children: 
               bounty.bounty: true
               bounty.bountylist: true
-              bounty.placebounty: true 
+              bounty.placebounty: true
+              bounty.paybounty: true
+              bounrt.bountyhuner: true
      bounty.bounty:
          description: Gives users access to the bounty command
      bounty.bountylist:
@@ -54,7 +56,9 @@ permissions:
      bounty.placebounty:
          description: Gives users access to the placebounty command
      bounty.paybounty:
-         description: Gives users access to placebounty command  
+         description: Gives users access to placebounty command
+     bounty.bountyhunter:
+         description: Allows the user to hunt others for their bounty 
      bounty.admin.*:
           description: Gives access to housekeeping commands
           children:
@@ -63,7 +67,9 @@ permissions:
                bounty.admin.addcbounty: true
                bounty.admin.addpsbounty: true
                bounty.admin.reloadbounty: true
-               bounty.admin.bountyinfo: true 
+               bounty.admin.bountyinfo: true
+               bounty.admin.convertdb: true
+               bounty.admin.bountyload: true 
      bounty.admin.setcbounty:
           description: Allow you to set a communal bounty for a user
           default: op

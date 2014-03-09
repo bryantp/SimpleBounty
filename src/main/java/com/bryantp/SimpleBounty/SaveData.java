@@ -202,11 +202,7 @@ public class SaveData {
 		playerList = null;
 		load();
 	}
-	
-	public HashMap<String, PlayerProfile> getplayerList(){
-		return (HashMap<String, PlayerProfile>) playerList; 
-	}
-	
+		
 	public boolean playerExists(String playerName){
 		return playerList.containsKey(playerName);
 	}
@@ -230,7 +226,7 @@ public class SaveData {
 	public int getNumberOfBounties(){
 		int num = 0;
 		for(Map.Entry<String, PlayerProfile> entry : playerList.entrySet()){
-			if(entry.getValue().gettotalBounty().signum() > 0){
+			if(entry.getValue().getTotalBounty().signum() > 0){
 				num++;
 			}
 		}
@@ -318,8 +314,8 @@ public class SaveData {
 			BigDecimal communalBounty = BigDecimal.ZERO, psBounty = BigDecimal.ZERO; 
 			for(Map.Entry<String, PlayerProfile> entry : data.entrySet()){
 				name = entry.getKey(); 
-				 communalBounty = entry.getValue().getcommunalBounty();
-				 psBounty = entry.getValue().getplayersetBounty(); 
+				 communalBounty = entry.getValue().getCommunalBounty();
+				 psBounty = entry.getValue().getPlayerSetBounty(); 
 				 String updateQuery = String.format(SimpleBountyResource.updateOrInsertMySQL,name,communalBounty,psBounty,communalBounty,psBounty);
 				 PreparedStatement ps;
 				 try {
@@ -344,8 +340,8 @@ public class SaveData {
 			
 				while(data.next()){
 					PlayerProfile player = new PlayerProfile(data.getString(2)); 
-					player.setcommunalBounty(new BigDecimal(data.getString(3)));
-					player.setplayersetBounty(new BigDecimal(data.getString(4)));
+					player.setCommunalBounty(new BigDecimal(data.getString(3)));
+					player.setPlayerSetBounty(new BigDecimal(data.getString(4)));
 					returnMap.put(data.getString(2), player);  
 				 } 	
 			} catch (SQLException e) {

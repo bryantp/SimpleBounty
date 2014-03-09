@@ -16,56 +16,75 @@ public class PlayerProfile implements Serializable, Comparable<PlayerProfile>{
 	 */
 	
 	private String name;
-	private BigDecimal communalBounty,playersetBounty;
+	private BigDecimal communalBounty,playerSetBounty;
 	
 	public PlayerProfile(String name){
 		this.name = name;
 		communalBounty = new BigDecimal("0").setScale(2, SimpleBountyResource.rounding);
-		playersetBounty = new BigDecimal("0").setScale(2,SimpleBountyResource.rounding); 	
+		playerSetBounty = new BigDecimal("0").setScale(2,SimpleBountyResource.rounding); 	
 	}
 	
 	public String getName(){
 		return name;
 	}
 	
-	public BigDecimal getcommunalBounty(){
+	public BigDecimal getCommunalBounty(){
 		return communalBounty; 
 	}
 	
-	public BigDecimal getplayersetBounty(){
-		return playersetBounty; 
+	public BigDecimal getPlayerSetBounty(){
+		return playerSetBounty; 
 	}
 	
-	public void addcommunalBounty(BigDecimal bounty){
+	public void addCommunalBounty(BigDecimal bounty){
 		communalBounty = communalBounty.add(bounty);  
 	}
 	
-	public void addplayersetBounty(BigDecimal bounty){
-		playersetBounty = playersetBounty.add(bounty); 
+	public void subtractCommunalBounty(BigDecimal bounty){
+		communalBounty = communalBounty.subtract(bounty);
+		if(communalBounty.signum() < 0){
+			communalBounty = BigDecimal.ZERO;
+		}
 	}
 	
-	public BigDecimal gettotalBounty(){
-		return communalBounty.add(playersetBounty);
+	public void addPlayerSetBounty(BigDecimal bounty){
+		playerSetBounty = playerSetBounty.add(bounty); 
+	}
+	
+	public BigDecimal getTotalBounty(){
+		return communalBounty.add(playerSetBounty);
 		
 	}
 	
-	public void setcommunalBounty(BigDecimal bounty){
+	public void setCommunalBounty(BigDecimal bounty){
 		communalBounty = bounty; 
 	}
 	
-	public void setplayersetBounty(BigDecimal bounty){
-		playersetBounty = bounty; 
+	public void setPlayerSetBounty(BigDecimal bounty){
+		playerSetBounty = bounty; 
+	}
+	
+	/**
+	 * Determines if the player has any bounty
+	 * @return
+	 */
+	public boolean hasBounty(){
+		BigDecimal totalBounty = this.communalBounty.add(this.playerSetBounty);
+		return (totalBounty != BigDecimal.ZERO);
+	}
+	
+	/**
+	 * Wipes all bounty;
+	 */
+	public void clearBounties(){
+		this.communalBounty = BigDecimal.ZERO;
+		this.playerSetBounty = BigDecimal.ZERO;
 	}
 
 
 	@Override
 	public int compareTo(PlayerProfile obj) {
 		if(obj == null) return 0; 
-		
-		return this.gettotalBounty().compareTo(obj.gettotalBounty());
+		return this.getTotalBounty().compareTo(obj.getTotalBounty());
 	}
-	
-	
-	
-
 }

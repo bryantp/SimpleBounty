@@ -43,7 +43,6 @@ public class SimpleBounty extends JavaPlugin{
 		
 		savedata = new SaveData(conf); 
 		bountyListener = new BountyListener(econ,this,conf);
-		bountyListener.setConfigVariables();
 
 		getLogger().info(SimpleBountyResource.getPluginEnabledMessage()); 
         bountyListener.setSaveData(savedata);

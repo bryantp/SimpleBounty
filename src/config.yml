@@ -3,13 +3,14 @@ communalbounty:
     enable: true
     increment: 2
     decrement: 2
-    incrementnobounty: true 
+    bountydecreaseonkill: false
 psbounty:
     enable: true
     min: 0
     max: 0
 showvictimmessages: true
 showkillermessages: true
+needbountylicense: false
 forcegoldecon: false 
 mySQL: 
     enabled: false 

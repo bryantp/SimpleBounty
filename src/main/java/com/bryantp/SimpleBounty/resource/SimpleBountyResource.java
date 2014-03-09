@@ -69,6 +69,10 @@ public class SimpleBountyResource {
 		reloadingDataMessage = defaultProps.getProperty("reloadingData","Reloading Data");
 		noEconomyFoundMessage = defaultProps.getProperty("noEconomyFound","No economy system detected, defaulting to gold ingots");
 		pluginDisabledDependencyMessage = defaultProps.getProperty("pluginDisabledDependency","[%s] - Disabled due to no Vault dependency found!");
+		addedToBountyMessage = defaultProps.getProperty("addedToBounty","Added to player's bounty");
+		pleaseEnterNumberMessage = defaultProps.getProperty("pleaseEnterNumber","Please enter a number");
+		playerDoesntexistMessage = defaultProps.getProperty("playerDoesntexist","Player doesn't exist");
+		noPermissionMessage = defaultProps.getProperty("noPermission","You do not have permission to do that");
 	}
 	
 	private static String victimMessage;
@@ -90,6 +94,10 @@ public class SimpleBountyResource {
 	private static String reloadingDataMessage;
 	private static String noEconomyFoundMessage;
 	private static String pluginDisabledDependencyMessage;
+	private static String addedToBountyMessage;
+	private static String pleaseEnterNumberMessage;
+	private static String playerDoesntexistMessage;
+	private static String noPermissionMessage;
 	
 	//Logger Messages
 	private static String errorTransactionMessage;
@@ -172,6 +180,22 @@ public class SimpleBountyResource {
 	
 	public static String getPluginDisabledDependencyMessage(){
 		return pluginDisabledDependencyMessage;
+	}
+	
+	public static String getAddedToBountyMessage(){
+		return addedToBountyMessage;
+	}
+	
+	public static String getPleaseEnterNumberMessage(){
+		return pleaseEnterNumberMessage;
+	}
+	
+	public static String getPlayerDoesntexistMessage(){
+		return playerDoesntexistMessage;
+	}
+	
+	public static String getNoPermissionMessage(){
+		return noPermissionMessage;
 	}
 
 }
