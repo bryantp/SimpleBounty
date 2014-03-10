@@ -8,6 +8,7 @@ notEnoughMoneyPlaceBounty=Not enough money to place bounty
 convertedToFlatFile=Converted SQL to FlatFile
 convertedToSQL=Converted FlatFile to SQL
 addedToBounty=Added %s to %s's Bounty
+errorConverting=To convert to MySQL, make sure the file exists and enable MySQL. To convert to FlatFile, make sure MySQL is disabled.
 
 #logger messages
 transactionError=There was an error with the transaction for %s %s
@@ -20,7 +21,7 @@ renameFlatFileFailure=Unable to rename old file
 pluginEnabled=SimpleBounty has been enabled
 pluginDisabled=SimpleBounty has been disabled
 reloadingData=Reloading Data
-noEconomyFound=No economy system detected, defaulting to gold ingots"
+noEconomyFound=No economy system detected, defaulting to gold ingots
 pluginDisabledDependency=[%s] - Disabled due to no Vault dependency found!
 pleaseEnterNumber=Please enter a number
 playerDoesntexist=Player doesn't exist

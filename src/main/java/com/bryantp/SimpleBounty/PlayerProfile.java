@@ -2,9 +2,9 @@ package com.bryantp.SimpleBounty;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.util.logging.Level;
 
-import com.bryantp.SimpleBounty.resource.SimpleBountyResource;
+import com.bryantp.SimpleBounty.resource.Resource;
 
 public class PlayerProfile implements Serializable, Comparable<PlayerProfile>{
 	
@@ -20,8 +20,8 @@ public class PlayerProfile implements Serializable, Comparable<PlayerProfile>{
 	
 	public PlayerProfile(String name){
 		this.name = name;
-		communalBounty = new BigDecimal("0").setScale(2, SimpleBountyResource.rounding);
-		playerSetBounty = new BigDecimal("0").setScale(2,SimpleBountyResource.rounding); 	
+		communalBounty = new BigDecimal("0").setScale(2, Resource.rounding);
+		playerSetBounty = new BigDecimal("0").setScale(2,Resource.rounding); 	
 	}
 	
 	public String getName(){
@@ -53,7 +53,6 @@ public class PlayerProfile implements Serializable, Comparable<PlayerProfile>{
 	
 	public BigDecimal getTotalBounty(){
 		return communalBounty.add(playerSetBounty);
-		
 	}
 	
 	public void setCommunalBounty(BigDecimal bounty){
@@ -70,7 +69,12 @@ public class PlayerProfile implements Serializable, Comparable<PlayerProfile>{
 	 */
 	public boolean hasBounty(){
 		BigDecimal totalBounty = this.communalBounty.add(this.playerSetBounty);
-		return (totalBounty != BigDecimal.ZERO);
+		SimpleBounty.logger.log(Level.INFO,"Total Bounty: " + totalBounty);
+		if(totalBounty.compareTo(BigDecimal.ZERO) == 0){
+			return false;
+		}
+		
+		return true;
 	}
 	
 	/**

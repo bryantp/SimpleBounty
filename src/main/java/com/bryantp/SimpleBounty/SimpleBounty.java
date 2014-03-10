@@ -12,12 +12,10 @@ import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.bryantp.SimpleBounty.resource.SimpleBountyResource;
+import com.bryantp.SimpleBounty.resource.Resource;
 
-import net.milkbowl.vault.economy.Economy;
 
 public class SimpleBounty extends JavaPlugin{
 	
@@ -25,7 +23,6 @@ public class SimpleBounty extends JavaPlugin{
 	private Config conf;  
 	private BountyListener bountyListener = null; 
 	private SimpleBountyCommandExecutor exec = null;
-	private static Economy econ = null;
 	public static boolean  useEcon = true; 
 	public boolean forcegoldecon; 
 	public boolean useSQL; 
@@ -34,17 +31,16 @@ public class SimpleBounty extends JavaPlugin{
 	public static final Logger logger = Logger.getLogger("SimpleBounty");
 	
 	public void onEnable(){
-		SimpleBountyResource.loadResources();
-		setupEconomy();
+		Resource.loadResources();
 		conf = new Config(this);
 		if(!conf.setup()){
 			return;
 		}
 		
 		savedata = new SaveData(conf); 
-		bountyListener = new BountyListener(econ,this,conf);
+		bountyListener = new BountyListener(conf);
 
-		getLogger().info(SimpleBountyResource.getPluginEnabledMessage()); 
+		getLogger().info(Resource.getPluginEnabledMessage()); 
         bountyListener.setSaveData(savedata);
 
         this.getServer().getPluginManager().registerEvents(bountyListener,this); 
@@ -64,7 +60,7 @@ public class SimpleBounty extends JavaPlugin{
 		getCommand("paybounty").setExecutor(exec); 
 		this.getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable(){ //Timed to reload the data every 5 minutes or so. 
 			public void run(){
-				logger.log(Level.INFO, SimpleBountyResource.getReloadingDataMessage());
+				logger.log(Level.INFO, Resource.getReloadingDataMessage());
 				savedata.reload(); 
 			}
 		}, 6000L, 6000L); 
@@ -76,27 +72,9 @@ public class SimpleBounty extends JavaPlugin{
 	
 	public void onDisable(){
 		savedata.save();
-		getLogger().info(SimpleBountyResource.getPluginDisabledMessage()); 
+		getLogger().info(Resource.getPluginDisabledMessage()); 
 	}
 		
-	/**
-	 * If there is an economy plugin enabled, sets up the economy plugin. 
-	 * @return
-	 */
-	public boolean setupEconomy(){
-		if(getServer().getPluginManager().getPlugin("Vault") == null){
-			return false; 
-		}
-		
-		RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class); 
-		if(rsp == null){
-			return false; 
-		}
-		
-		econ = rsp.getProvider(); 
-		return econ != null; 
-	}
-
 	
 	/**
 	 * Checks to see if a player is stored in either offline players or current online players.
@@ -106,7 +84,10 @@ public class SimpleBounty extends JavaPlugin{
 	public boolean checkExists(String playerName){
 		OfflinePlayer[] offPlayer = Bukkit.getServer().getOfflinePlayers();
 		Player[] onLinePlayer = Bukkit.getServer().getOnlinePlayers(); 
-		
+		if(savedata.getPlayerProfile(playerName) == null){
+			return false;
+		}
+
 		for(OfflinePlayer player : offPlayer){
 			if(player.getName().equalsIgnoreCase(playerName)){
 				return true;

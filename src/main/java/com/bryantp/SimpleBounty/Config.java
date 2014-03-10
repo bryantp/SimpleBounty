@@ -6,12 +6,11 @@ import java.util.HashMap;
 import java.util.logging.Level;
 
 import net.milkbowl.vault.economy.Economy;
-import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
-import com.bryantp.SimpleBounty.resource.SimpleBountyResource;
+import com.bryantp.SimpleBounty.resource.Resource;
 
 public class Config {
 	
@@ -20,7 +19,7 @@ public class Config {
 	private FileConfiguration fileConfig; 
 	
 	//Config Settings
-	private static boolean  useEcon = true; 
+	private boolean useEcon = true; 
 	private boolean forcegoldecon; 
 	private boolean useSQL;   
 	private boolean communalEnable, psEnable;;
@@ -31,9 +30,7 @@ public class Config {
 	private BigDecimal max,min; 
 	
 	//Vault
-	private static Economy econ = null;
-
-	private static Permission perms = null; //Get rid of this and use Bukkit
+	private Economy econ = null;
 	
 	//SQl Settings
 	private String host;
@@ -42,7 +39,7 @@ public class Config {
 	private String userName;
 	private String password;
 	
-	private File directory = new File("plugins\\SimpleBounty"); 
+	private File directory = new File("plugins/SimpleBounty"); 
 	
 	public Config(SimpleBounty simplebounty){
 		this.simplebounty = simplebounty;
@@ -55,24 +52,28 @@ public class Config {
 		this.forcegoldecon = fileConfig.getBoolean("forcegoldecon");
 		this.showvictimMessage = fileConfig.getBoolean("showvictimmessages");
 		this.showkillerMessage = fileConfig.getBoolean("showkillermessages");
-		this.increment = new BigDecimal(fileConfig.getDouble("communalbounty.increment")).setScale(2,SimpleBountyResource.rounding);
-		this.decrement = new BigDecimal(fileConfig.getDouble("communalbounty.decrement")).setScale(2, SimpleBountyResource.rounding); 
-		this.max = new BigDecimal(fileConfig.getDouble("psbounty.max")).setScale(2,SimpleBountyResource.rounding);
-		this.min = new BigDecimal(fileConfig.getString("psbounty.min")).setScale(2,SimpleBountyResource.rounding); 
+		this.increment = new BigDecimal(fileConfig.getDouble("communalbounty.increment")).setScale(2,Resource.rounding);
+		this.decrement = new BigDecimal(fileConfig.getDouble("communalbounty.decrement")).setScale(2, Resource.rounding); 
+		this.max = new BigDecimal(fileConfig.getDouble("psbounty.max")).setScale(2,Resource.rounding);
+		this.min = new BigDecimal(fileConfig.getString("psbounty.min")).setScale(2,Resource.rounding); 
 		this.communalEnable = fileConfig.getBoolean("communalbounty.enable");
 		this.psEnable = fileConfig.getBoolean("psbounty.enable");
-		this.useSQL = fileConfig.getBoolean("mySQL.enabled");
-		this.needBountyLicense = fileConfig.getBoolean("needBountyLicense");
+		this.useSQL = fileConfig.getBoolean("MySQL.enabled");
+		this.needBountyLicense = fileConfig.getBoolean("needbountylicense");
 		this.bountyDecreaseOnKill = fileConfig.getBoolean("communalbounty.bountydecreaseonkill");
-
+		
 		if(useSQL){
-			this.host = fileConfig.getString("mySQL.host");
-			this.port = Integer.parseInt(fileConfig.getString("mySQL.port"));
-			this.database = fileConfig.getString("mySQL.database");
-			this.userName = fileConfig.getString("mySQL.username");
-			this.password =  fileConfig.getString("mySQL.password");
-			this.useSQL = fileConfig.getBoolean("mySQL.enabled");
+			loadMySQL();
 		}
+	}
+		
+	public void loadMySQL(){
+		this.host = fileConfig.getString("MySQL.host");
+		this.port = Integer.parseInt(fileConfig.getString("MySQL.port"));
+		this.database = fileConfig.getString("MySQL.database");
+		this.userName = fileConfig.getString("MySQL.username");
+		this.password =  fileConfig.getString("MySQL.password");
+		this.useSQL = fileConfig.getBoolean("MySQL.enabled");
 	}
 	
 	/**
@@ -81,15 +82,9 @@ public class Config {
 	 */
 	public boolean setup(){
 		if(!setupEconomy()){
-			SimpleBounty.logger.log(Level.INFO,SimpleBountyResource.getNoEconomyFoundMessage());
+			SimpleBounty.logger.log(Level.INFO,Resource.getNoEconomyFoundMessage());
 			useEcon = false; 
 		}
-		
-		if(!setupPermissions()){
-	        SimpleBounty.logger.info(String.format(SimpleBountyResource.getPluginDisabledDependencyMessage(), simplebounty.getDescription().getName()));
-	        simplebounty.getServer().getPluginManager().disablePlugin(simplebounty);
-	        return false;
-	    }
 		  
 		if(forcegoldecon){
 			useEcon = false;
@@ -123,22 +118,12 @@ public class Config {
 		
 		econ = rsp.getProvider(); 
 		return econ != null; 
+	}
+	
+	public Economy getEconomy(){
+		return this.econ;
+	}
 		
-	}
-	
-	/**
-	 * Sets up the permissions for the commands
-	 * @return
-	 */
-	public boolean setupPermissions(){
-		if(simplebounty.getServer().getPluginManager().getPlugin("Vault") == null){
-			return false; 
-		}
-		RegisteredServiceProvider<Permission> rsp = simplebounty.getServer().getServicesManager().getRegistration(Permission.class);
-		perms = rsp.getProvider();
-		return perms != null; 
-	}
-	
 	public boolean getforcegoldecon(){
 		return forcegoldecon; 
 	}
@@ -246,10 +231,6 @@ public class Config {
 		map.put("username", fileConfig.getString("mySQL.username"));
 		map.put("password", fileConfig.getString("mySQL.password"));
 		return map; 
-	}
-	
-	public Permission getPermissions(){
-		return perms; 
 	}
 	
 	public boolean getNeedBountyLicense(){

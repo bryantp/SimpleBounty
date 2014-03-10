@@ -17,11 +17,10 @@ import java.util.logging.Level;
 
 import lib.PatPeter.SQLibrary.MySQL;
 
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import com.bryantp.SimpleBounty.base.IDatabaseHandler;
-import com.bryantp.SimpleBounty.resource.SimpleBountyResource;
+import com.bryantp.SimpleBounty.resource.Resource;
 
 /**
  * Responsible for the handling Data including saving and retrieval. 
@@ -30,9 +29,10 @@ import com.bryantp.SimpleBounty.resource.SimpleBountyResource;
  */
 public class SaveData {
 		
-	private static File saveFile = new File(SimpleBountyResource.saveFile);
-	private static File directory = new File(SimpleBountyResource.directory);
-	private static File configFile = new File(SimpleBountyResource.configFile);
+	private static File saveFile = new File(Resource.saveFile);
+	private static File saveFileOld = new File(Resource.saveFileRename);
+	private static File directory = new File(Resource.directory);
+	private static File configFile = new File(Resource.configFile);
 	
 	private boolean useSQL; 
 	private IDatabaseHandler databaseHandler;
@@ -50,10 +50,16 @@ public class SaveData {
 	 */
 	public void setup(){
 		 if(useSQL){
-			 databaseHandler = new SimpleBountyMySQL(conf.getHost(),conf.getPort(),conf.getDatabase(),conf.getUserName(),conf.getPassword());
+			 setupDB();
  		 }
 		 
 		 createFileandDirectory(); 	
+	}
+	
+	
+	private void setupDB(){
+		databaseHandler = new SimpleBountyMySQL(conf.getHost(),conf.getPort(),conf.getDatabase(),conf.getUserName(),conf.getPassword());
+		databaseHandler.setupConnection();
 	}
 	
 	/**
@@ -62,40 +68,54 @@ public class SaveData {
 	@SuppressWarnings("unchecked")
 	public void convertDB(Player player){
 		//Code to convert from Flatfile to SQL and vice versa. 
+		SimpleBounty.logger.log(Level.INFO,"Starting Conversion");
 		if(saveFile.exists() && useSQL){
-			SimpleBounty.logger.log(Level.INFO,SimpleBountyResource.getConvertingToSQLMessage());
+			SimpleBounty.logger.log(Level.INFO,Resource.getConvertingToSQLMessage());
 			FileInputStream input;
 			try {
 				input = new FileInputStream(saveFile);
 				ObjectInputStream objStream = new ObjectInputStream(input); 
 				Object inputObj = objStream.readObject();
 				databaseHandler.push((HashMap<String, PlayerProfile>) inputObj);
-				player.sendMessage(SimpleBountyResource.positiveMessageColor + SimpleBountyResource.getConvertedToSQLMessageMessage()); 
+				player.sendMessage(Resource.positiveMessageColor + Resource.getConvertedToSQLMessageMessage()); 
 				input.close();
 				objStream.close();
 			} catch (Exception e) {
-				player.sendMessage(SimpleBountyResource.negativeMessageColor + SimpleBountyResource.getErrorConvertingToSQLMessage()); 
+				player.sendMessage(Resource.negativeMessageColor + Resource.getErrorConvertingToSQLMessage()); 
 				e.printStackTrace();
 			}
 			
-			if(saveFile.renameTo(new File(SimpleBountyResource.saveFileRename))){
-				player.sendMessage(SimpleBountyResource.positiveMessageColor + SimpleBountyResource.getRenameFlatFileSuccessMessage());  
+			if(saveFile.renameTo(saveFileOld)){
+				player.sendMessage(Resource.positiveMessageColor + Resource.getRenameFlatFileSuccessMessage());  
 			}else{
-				player.sendMessage(SimpleBountyResource.negativeMessageColor + SimpleBountyResource.getRenameFlatFileFailure()); 
+				player.sendMessage(Resource.negativeMessageColor + Resource.getRenameFlatFileFailure()); 
 			}
 			
-		}else if(!saveFile.exists() && !useSQL){
-			SimpleBounty.logger.log(Level.INFO,SimpleBountyResource.getConvertingToFlatFileMessage());
+		}else if(!useSQL){
+			SimpleBounty.logger.log(Level.INFO,Resource.getConvertingToFlatFileMessage());
+			conf.loadMySQL();
+			setupDB();
 			playerList = databaseHandler.pull();
 			try {
 				saveFile.createNewFile();
 				save(); 
-				player.sendMessage(SimpleBountyResource.positiveMessageColor+ SimpleBountyResource.getConvertedToFlatFileMessage()); 
+				player.sendMessage(Resource.positiveMessageColor+ Resource.getConvertedToFlatFileMessage()); 
 
 			} catch (IOException e) {
-				player.sendMessage(SimpleBountyResource.negativeMessageColor + SimpleBountyResource.getErrorConvertingToFlatFileMessage()); 
+				player.sendMessage(Resource.negativeMessageColor + Resource.getErrorConvertingToFlatFileMessage()); 
 				e.printStackTrace();
 			} 
+			
+			if(saveFileOld.exists()){
+				saveFileOld.delete();
+			}
+			
+			databaseHandler.closeConnection();
+
+		}else{
+			player.sendMessage(Resource.negativeMessageColor + Resource.getErrorConvertingMessage());
+			SimpleBounty.logger.log(Level.INFO,"MySQL Enabled: " + conf.getuseSQL());
+			SimpleBounty.logger.log(Level.INFO,"SaveFile exists: " + saveFile.exists());
 		}
 	}
 	
@@ -288,7 +308,7 @@ public class SaveData {
 			}
 			
 			if(!mysql.isTable("simplebounty")){
-				String create = SimpleBountyResource.createTableSQL;
+				String create = Resource.createTableSQL;
 				createTable(create);
 			}
 		}
@@ -316,9 +336,10 @@ public class SaveData {
 				name = entry.getKey(); 
 				 communalBounty = entry.getValue().getCommunalBounty();
 				 psBounty = entry.getValue().getPlayerSetBounty(); 
-				 String updateQuery = String.format(SimpleBountyResource.updateOrInsertMySQL,name,communalBounty,psBounty,communalBounty,psBounty);
+				 String updateQuery = String.format(Resource.updateOrInsertMySQL,name,communalBounty,psBounty,communalBounty,psBounty);
 				 PreparedStatement ps;
 				 try {
+					 SimpleBounty.logger.log(Level.INFO,"Query: " + updateQuery);
 					 ps = mysql.prepare(updateQuery);
 					 mysql.query(ps);
 				 } catch (SQLException e) {
@@ -334,7 +355,7 @@ public class SaveData {
 			Map<String, PlayerProfile> returnMap = new HashMap<String, PlayerProfile>();
 			PreparedStatement ps;
 			try {
-				ps = mysql.prepare(SimpleBountyResource.getAllFromMySQL);
+				ps = mysql.prepare(String.format(Resource.getAllFromMySQL,conf.getDatabase()));
 				ResultSet data = mysql.query(ps);
 				data.beforeFirst(); 
 			

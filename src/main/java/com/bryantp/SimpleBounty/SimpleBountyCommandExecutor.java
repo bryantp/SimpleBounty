@@ -2,10 +2,8 @@ package com.bryantp.SimpleBounty;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.logging.Level;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -16,24 +14,18 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginDescriptionFile;
 
-import com.bryantp.SimpleBounty.resource.SimpleBountyResource;
-
-import net.milkbowl.vault.economy.Economy;
-import net.milkbowl.vault.permission.Permission;
-
+import com.bryantp.SimpleBounty.resource.Resource;
 
 public class SimpleBountyCommandExecutor implements CommandExecutor {
 	private SimpleBounty sp; 
 	private Config conf; 
 	private SaveData saveData; 
 	private final BountyListener eListener; 
-	private final Permission perms; 
 	
 	public SimpleBountyCommandExecutor(SimpleBounty sp, BountyListener eListener, Config conf, SaveData saveData){
 		this.sp = sp; 
 		this.eListener = eListener;
 		this.saveData = saveData; 
-		perms = conf.getPermissions(); 
 		this.conf = conf; 
 	}
 
@@ -53,57 +45,57 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 		
 		//Bounty list command 
 		else if(cmd.getName().equalsIgnoreCase("bountylist")){
-			return bountylistCommand(player, args); 
+			return bountyListCommand(player, args); 
 		}
 		
 		//Place bounty command
 		else if(cmd.getName().equalsIgnoreCase("placebounty")){
-			return placebountyCommand(player, args); 
+			return placeBountyCommand(player, args); 
 		}
 		
 		//Set set communal bounty command 
 		else if(cmd.getName().equalsIgnoreCase("setcommunalbounty")){
-			return setcommunalbountyCommand(player, args); 
+			return setCommunalBountyCommand(player, args); 
 		}
 		
 		//Set player set bounty command 
 		else if(cmd.getName().equalsIgnoreCase("setplayersetbounty")){
-			return setplayersetbountyCommand(player, args); 
+			return setPlayerSetBountyCommand(player, args); 
 		}
 		
 		//Add Bounty command
 		else if(cmd.getName().equalsIgnoreCase("addcommunalbounty")){
-			return addcommunalbountyCommand(player,args); 
+			return addCommunalBountyCommand(player,args); 
 		}
 		
 		//Add player set bounty command 
 		else if(cmd.getName().equalsIgnoreCase("addplayersetbounty")){
-			return addplayersetbountyCommand(player,args); 
+			return addPlayerSetBountyCommand(player,args); 
 		}
 		
 		//Bounty Reload Command
 		else if(cmd.getName().equalsIgnoreCase("bountyreload")){
-			return bountyreloadCommand(player, args);
+			return bountyReloadCommand(player, args);
 			}
 		
 		//Bounty info command
 		else if(cmd.getName().equalsIgnoreCase("bountyinfo")){
-			return bountyinfoCommand(player);
+			return bountyInfoCommand(player);
 		}
 		
 		//Convert DB command 
 		else if(cmd.getName().equalsIgnoreCase("convertdb")){
-			return convertdbCommand(player); 
+			return convertDBCommand(player); 
 		}
 		
 		//Bounty reload command 
 		else if(cmd.getName().equalsIgnoreCase("bountyload")){
-			return bountyloadCommand(player); 
+			return bountyLoadCommand(player); 
 		}
 		
 		//Pay bounty command 
 		else if(cmd.getName().equalsIgnoreCase("paybounty")){
-			return paybountyCommand(player, args); 
+			return payBountyCommand(player, args); 
 		}
 		
 		return false; 
@@ -111,9 +103,9 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 	}
 	
 	//Bounty command 
-	public boolean bountyCommand(Player player, String[] args){
+	private boolean bountyCommand(Player player, String[] args){
 		
-		if(!(perms.has(player,"bounty.bounty")) || !(perms.has(player, "bounty.*"))){
+		if(!player.hasPermission("bounty.bounty")){
 			noPermissions(player);
 			return true; 
 		}
@@ -165,8 +157,8 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 		} 
 	
 	//Bounty list command (blist) 
-	public boolean bountylistCommand(Player player, String[] args){
-		if(perms.has(player,"bounty.bountylist") || perms.has(player,"bounty.*")){
+	private boolean bountyListCommand(Player player, String[] args){
+		if(player.hasPermission("bounty.bountylist")){
 			ArrayList<String> top = eListener.calculateTop(); 
 			if(top.size() == 0 || top.get(0).equalsIgnoreCase("There are no bounties to display!")){
 				player.sendMessage(ChatColor.DARK_GRAY + "There are no bounties to display!"); 
@@ -185,14 +177,14 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 	}
 	
 	//Place bounty command 
-	public boolean placebountyCommand(Player player, String[] args){
+	private boolean placeBountyCommand(Player player, String[] args){
 		if(!conf.getpsEnable()){
 			player.sendMessage(ChatColor.RED + "Player placed bounties have been disabled!");
 			return true; //Going to return true since this is a config issue. 
 		}
 		
 		else{
-			if(perms.has(player,"bounty.placebounty") || perms.has(player, "bounty.*")){
+			if(player.hasPermission("bounty.placebounty")){
 				if(args.length != 2){
 					player.sendMessage(ChatColor.RED + "Incorrect number of arguments");
 					return false; 
@@ -236,8 +228,8 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 	}
 	
 	//Set communal bounty command. 
-	public boolean setcommunalbountyCommand(Player player, String[] args){
-		if(perms.has(player,"bounty.admin.*") || perms.has(player,"bounty.admin.setbounty")){
+	private boolean setCommunalBountyCommand(Player player, String[] args){
+		if(player.hasPermission("bounty.admin.setcbounty")){
 			
 			if(args.length != 2){
 				player.sendMessage("Wrong amount of arguments");
@@ -273,8 +265,8 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 	}
 	
 	//set player set bounty command. 
-	public boolean setplayersetbountyCommand(Player player, String[] args){
-		if(perms.has(player,"bounty.admin.*") || perms.has(player,"bounty.admin.setbounty")){
+	private boolean setPlayerSetBountyCommand(Player player, String[] args){
+		if(player.hasPermission("bounty.admin.setpsbounty")){
 			
 			if(args.length != 2){
 				player.sendMessage("Wrong amount of arguments");
@@ -310,8 +302,8 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 	}
 	
 	//Add communal bounty command. 
-	public boolean addcommunalbountyCommand(Player player, String[] args){
-		if(perms.has(player,"bounty.admin.*") || perms.has(player,"bounty.admin.addbounty:")){
+	private boolean addCommunalBountyCommand(Player player, String[] args){
+		if(player.hasPermission("bounty.admin.addcbounty")){
 			
 			if(args.length != 2){
 				player.sendMessage(ChatColor.RED + "Wrong amount of arguments");
@@ -347,8 +339,8 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 	}
 	
 	//Add player set bounty command
-	public boolean addplayersetbountyCommand(Player player, String[] args){
-		if(perms.has(player,"bounty.admin.*") || perms.has(player,"bounty.admin.addbounty:")){
+	private boolean addPlayerSetBountyCommand(Player player, String[] args){
+		if(player.hasPermission("bounty.admin.addpsbounty")){
 			
 			if(args.length != 2){
 				player.sendMessage(ChatColor.RED + "Wrong amount of arguments");
@@ -360,46 +352,47 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 					if(Integer.parseInt(args[1]) <= 0) player.sendMessage(ChatColor.RED + "Please enter a value above 0");
 					else{			
 							eListener.addtoplayersetBounty(args[0],new BigDecimal(args[1])); 
-							player.sendMessage(SimpleBountyResource.positiveMessageColor + String.format(SimpleBountyResource.getAddedToBountyMessage(),args[0],args[1]));
+							player.sendMessage(Resource.positiveMessageColor + String.format(Resource.getAddedToBountyMessage(),args[0],args[1]));
 					} 
 					return true; 
 				}
 				catch(Exception e){
-					player.sendMessage(SimpleBountyResource.negativeMessageColor + SimpleBountyResource.getPleaseEnterNumberMessage());
+					player.sendMessage(Resource.negativeMessageColor + Resource.getPleaseEnterNumberMessage());
 					return true; 
 				}
 			}
 			
 			
 			else{
-				player.sendMessage(SimpleBountyResource.negativeMessageColor + SimpleBountyResource.getPlayerDoesntexistMessage()); 
+				player.sendMessage(Resource.negativeMessageColor + Resource.getPlayerDoesntexistMessage()); 
 				return true; 
 			}
 			
 		}
 		
 		else{
-			player.sendMessage(SimpleBountyResource.negativeMessageColor + SimpleBountyResource.getNoPermissionMessage());
+			player.sendMessage(Resource.negativeMessageColor + Resource.getNoPermissionMessage());
 			return true; 
 		}
 	}
 	
 	
 	//Reloads simpleBounty
-	public boolean bountyreloadCommand(Player player, String[] args){
-		if(perms.has(player,"bounty.admin.*") || perms.has(player,"bounty.admin.addbounty:")){
+	private boolean bountyReloadCommand(Player player, String[] args){
+		if(player.hasPermission("bounty.admin.reloadbounty")){
 			saveData.reload(); 
 			sp.reloadConfig();
 			conf.loadConfig();
 			player.sendMessage(ChatColor.GREEN + "Reloaded SimpleBounty"); 
 			return true; 
-		}	
-		return false;
+		}
+		noPermissions(player);
+		return true;
 	} 
 	
 	//Displays SimpleBounty information 
-	public boolean bountyinfoCommand(Player player){
-		if(perms.has(player,"bounty.admin.*") || perms.has(player,"bounty.admin.bountyinfo:")){
+	private boolean bountyInfoCommand(Player player){
+		if(player.hasPermission("bounty.admin.bountyinfo")){
 		
 			PluginDescriptionFile spDescrip = sp.getDescription(); 
 			player.sendMessage(ChatColor.GREEN + "You are running SimpleBounty V" + spDescrip.getVersion());
@@ -411,43 +404,34 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 			player.sendMessage(ChatColor.GREEN + "Max PlayerSet Bounty: " + conf.getMax());
 			player.sendMessage(ChatColor.GREEN + "Show Killer Message: " + conf.getshowkillerMessage());
 			player.sendMessage(ChatColor.GREEN + "Show Victim Message: " + conf.getshowvictimMessage());
+			player.sendMessage(ChatColor.GREEN + "Require Bounty Hunter License? (needbountylicense): " + conf.getNeedBountyLicense());
+			player.sendMessage(ChatColor.GREEN + "Killing wanted men lowers your own bounty? (bountydecreaseonkill)" + conf.getBountyDecreaseOnKill());
 			player.sendMessage(ChatColor.GREEN + "Total number of Bounties: " + saveData.getNumberOfBounties());
-			for(Map.Entry<String, PlayerProfile> entry : saveData.getPlayerList().entrySet()){
-				if(entry.getValue() != null) {
-					PlayerProfile p = entry.getValue();
-					if(p.getTotalBounty().signum() > 0){
-						player.sendMessage(ChatColor.GREEN + p.getName() + " Communal: " + p.getCommunalBounty() + " Playeset: " + p.getPlayerSetBounty() + " Total: " + p.getTotalBounty());
-					}
-				}
-			}
-		} 
-		
-		else{
+		}else{
 			noPermissions(player); 
 		}
 		
 		return true; 
 	}
 	
-	//Displayes the no permissions error message. 
-	public void noPermissions(Player player){ //Need to convert over other commands to use this. 
+	private void noPermissions(Player player){
 		player.sendMessage(ChatColor.RED + "You do not have permission to do that."); 
 	}
 	
 	//Convert DB command. 
-	public boolean convertdbCommand(Player player){
-		if(perms.has(player,"bounty.admin.*") || perms.has(player,"bounty.admin.convertdb:")){
+	private boolean convertDBCommand(Player player){
+		if(player.hasPermission("bounty.admin.convertdb")){
 			saveData.convertDB(player); 
 			return true; 
 		} 
-		player.sendMessage(ChatColor.RED + "You do not have permission to do that"); 
-		return false; 
+		noPermissions(player); 
+		return true; 
 	}
 	
 	
 	//Loads from the Database of FlatFile. 
-	public boolean bountyloadCommand(Player player){
-		if(perms.has(player, "bounty.admin.*") || perms.has(player, "bounty.admin.bountyload")){
+	private boolean bountyLoadCommand(Player player){
+		if(player.hasPermission("bounty.admin.bountyload")){
 			saveData.load(); 
 			if(conf.getuseSQL()) {
 				player.sendMessage(ChatColor.GREEN + "Loaded from SQL");
@@ -463,10 +447,8 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 	}
 	
 	//paybounty command 
-	public boolean paybountyCommand(Player player, String[] args){
-		if(perms.has(player, "bounty.paybounty") || perms.has(player, "bounty.*")){
-						
-			Economy econ = eListener.getEcon(); 
+	private boolean payBountyCommand(Player player, String[] args){
+		if(player.hasPermission("bounty.paybounty")){
 			boolean useEcon = conf.getuseEcon();   
 			PlayerProfile p = saveData.getPlayerProfile(player.getName()); //Get a playerProfile object 
 			BigDecimal amount;
@@ -486,12 +468,12 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 						amount = p.getCommunalBounty();  //If a person tries to pay more than what their bounty is, only make their bounty 0. 
 					}
 					
-					if(!econ.has(player.getName(), amount.doubleValue())){
+					if(!conf.getEconomy().has(player.getName(), amount.doubleValue())){
 						player.sendMessage(ChatColor.RED + "You do not have enough money"); 
 						return true; 
 					}
 					p.setCommunalBounty(p.getCommunalBounty().subtract(amount)); //Subtract the amount the player wants from their bounty. 
-					econ.withdrawPlayer(player.getName(),amount.doubleValue()); //Withdraws from the player's account. 
+					conf.getEconomy().withdrawPlayer(player.getName(),amount.doubleValue()); //Withdraws from the player's account. 
 					player.sendMessage(ChatColor.GREEN + "You paid " + amount + " on your bounty.\nYour current communal bounty is " + p.getCommunalBounty()); 
 					return true; 
 				} 
@@ -502,12 +484,12 @@ public class SimpleBountyCommandExecutor implements CommandExecutor {
 						amount = p.getPlayerSetBounty(); 
 					}
 					
-					if(!econ.has(player.getName(), amount.doubleValue())){
+					if(!conf.getEconomy().has(player.getName(), amount.doubleValue())){
 						player.sendMessage(ChatColor.RED + "You do not have enough money"); 
 						return true; 
 					}
 					p.setPlayerSetBounty(p.getPlayerSetBounty().subtract(amount)); 
-					econ.withdrawPlayer(player.getName(),amount.doubleValue()); //Withdraws from the player's account. 
+					conf.getEconomy().withdrawPlayer(player.getName(),amount.doubleValue()); //Withdraws from the player's account. 
 					player.sendMessage(ChatColor.GREEN + "You paid " + amount + " on your bounty.\nYour current player set bounty is " + p.getPlayerSetBounty()); 
 					return true; 
 				}

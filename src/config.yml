@@ -1,18 +1,18 @@
 #Default Configuration File
 communalbounty:
     enable: true
-    increment: 2
-    decrement: 2
+    increment: 5
+    decrement: 5
     bountydecreaseonkill: false
 psbounty:
     enable: true
     min: 0
-    max: 0
+    max: 200
 showvictimmessages: true
 showkillermessages: true
 needbountylicense: false
 forcegoldecon: false 
-mySQL: 
+MySQL: 
     enabled: false 
     host: ''
     port: ''

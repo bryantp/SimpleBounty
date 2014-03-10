@@ -43,6 +43,7 @@ commands:
 permissions:
      bounty.*:
          description: Gives users access to normal commands
+         default: op
          children: 
               bounty.bounty: true
               bounty.bountylist: true
@@ -61,6 +62,7 @@ permissions:
          description: Allows the user to hunt others for their bounty 
      bounty.admin.*:
           description: Gives access to housekeeping commands
+          default: op
           children:
                bounty.admin.setpsbounty: true
                bounty.admin.setcbounty: true

@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.EntityType;
@@ -26,25 +25,23 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
-import com.bryantp.SimpleBounty.resource.SimpleBountyResource;
+import com.bryantp.SimpleBounty.resource.Resource;
 
-import net.milkbowl.vault.economy.Economy; 
 import net.milkbowl.vault.economy.EconomyResponse; 
 
-
+/**
+ * Event listener and handler
+ * @author Bryan
+ *
+ */
 public class BountyListener implements Listener{
-
-	private SimpleBounty sb = null; 
 	
 	private SaveData saveData;
-	private Economy econ= null;
 	private Config conf;
 	 
 	
 	
-	public BountyListener(Economy econ, SimpleBounty sb, Config conf){
-		this.econ = econ; 
-		this.sb = sb; 
+	public BountyListener(Config conf){
 		this.conf = conf;
 	}
 	
@@ -71,7 +68,7 @@ public class BountyListener implements Listener{
     }
 	
 	/**
-	 * Death Handler. Makes sure that the entity that did the killing is a Player. 
+	 * Death Handler.
 	 */
 	@EventHandler
 	public void onDeath(EntityDeathEvent event){
@@ -98,7 +95,6 @@ public class BountyListener implements Listener{
 					if(nEvent.getDamager().getType() == EntityType.SPLASH_POTION){
 						Projectile potion = (Projectile) nEvent.getDamager(); 
 						killer = (Player) potion.getShooter(); 
-					 
 					}
 				}
 			 
@@ -116,28 +112,20 @@ public class BountyListener implements Listener{
 	 * @param killer
 	 * @param victim
 	 */
-	public void bountyHandler(Player killer, Player victim){
+	private void bountyHandler(Player killer, Player victim){
 		
 		//Give the killer the bounty
 		PlayerProfile killerProfile = saveData.getPlayerProfile(killer.getName());
-		PlayerProfile victimProfile = saveData.getPlayerProfile(victim.getName());
-		
-		BigDecimal bounty = saveData.getPlayerProfile(victim.getName()).getTotalBounty();
-		 
-		if(bounty.signum() > 0){ //Only gives money if the bounty is greater than 0. Stopped a bug where 1 gold was given even if bounty was 0. 
-			//Do the new transaction here. 
-			transactionHandler(killer.getName(), BigDecimal.ZERO); 
-		 }
-		
+		PlayerProfile victimProfile = saveData.getPlayerProfile(victim.getName());		
 		if(conf.getNeedBountyLicense()){
 			/**If you need a bounty license, then you need to check for bounty hunter permission. If they don't have it, they don't get the reward and they get a bounty placed on 
 			* them even if the person they killed had a bounty. The person who died has no change in their bounty. 
 			* 
 			* Players can have their bounty go down if they kill people with bounties as well.
 			*/
-			
 			if(victimProfile.hasBounty() && killer.hasPermission("bounty.bountyhunter")){
 				//Give them the bounty if the person they killed has a bounty and they are licensed
+				SimpleBounty.logger.log(Level.INFO,"Victim had a bounty and killer is a bounty hunter.");
 				transactionHandler(killerProfile.getName(),victimProfile.getTotalBounty());
 				victimProfile.clearBounties();
 				if(conf.getBountyDecreaseOnKill()){
@@ -147,10 +135,25 @@ public class BountyListener implements Listener{
 
 			}else{
 				//You need a license or you killed an innocent. Penalty!
+				SimpleBounty.logger.log(Level.INFO,"Victim was innocent or you need a license");
 				killerProfile.addCommunalBounty(conf.getIncrement());
 			}
 		}else{
-			
+			SimpleBounty.logger.log(Level.INFO,"Victim Bounty " + victimProfile.getTotalBounty());
+			SimpleBounty.logger.log(Level.INFO,"Victim hasBounty? " + victimProfile.hasBounty());
+
+			if(victimProfile.hasBounty()){
+				SimpleBounty.logger.log(Level.INFO,"Victim had a bounty. No bounty hunter license required.");
+				transactionHandler(killerProfile.getName(),victimProfile.getTotalBounty());
+				victimProfile.clearBounties();
+				if(conf.getBountyDecreaseOnKill()){
+					//Your bounty goes down as you kill people with bounties
+					killerProfile.subtractCommunalBounty(conf.getDecrement());
+				}
+			}else{
+				killerProfile.addCommunalBounty(conf.getIncrement());
+				SimpleBounty.logger.log(Level.INFO,"Victim was innocent.No License needed");
+			}
 		}
 			
 	}
@@ -212,23 +215,23 @@ public class BountyListener implements Listener{
 		if(placebountyHandler(placer, victim, bounty)){ 
 			
 			if(conf.getshowkillerMessage()){
-				placer.sendMessage(SimpleBountyResource.positiveMessageColor + String.format(SimpleBountyResource.getPlaceBountyMessageOnPlayer(),bounty.doubleValue(),victim)); 
+				placer.sendMessage(Resource.positiveMessageColor + String.format(Resource.getPlaceBountyMessageOnPlayer(),bounty.doubleValue(),victim)); 
 			}
 			
 			Player victimPlayer = Bukkit.getPlayer(victim);
 			if(victimPlayer != null){
 				if(conf.getshowvictimMessage()){
-					victimPlayer.sendMessage(SimpleBountyResource.negativeMessageColor + String.format(SimpleBountyResource.getBountyPlacedOnYouMessage(),placer.getName(),bounty.doubleValue())); 
+					victimPlayer.sendMessage(Resource.negativeMessageColor + String.format(Resource.getBountyPlacedOnYouMessage(),placer.getName(),bounty.doubleValue())); 
 				}
 			}
 		}else{
-			placer.sendMessage(SimpleBountyResource.negativeMessageColor + SimpleBountyResource.getNotEnoughMoneyToPlaceBountyMessage()); 
+			placer.sendMessage(Resource.negativeMessageColor + Resource.getNotEnoughMoneyToPlaceBountyMessage()); 
 		}
 	}
 	
 	/**
 	 * Calculates the top 10 player's total bounties. 
-	 * @return
+	 * @return An ArrayList with the ordered players. 
 	 */
 	public ArrayList<String> calculateTop(){
 		ArrayList<PlayerProfile> unSortedList = new ArrayList<PlayerProfile>(); 
@@ -248,7 +251,7 @@ public class BountyListener implements Listener{
 			if(unSortedList.size() != 0){
 				for(int i = 0; i < unSortedList.size(); i++){
 					BigDecimal totalBounty = unSortedList.get(i).getTotalBounty();
-					if(!totalBounty.equals(SimpleBountyResource.SimpleBountyBigDecimalZero)){
+					if(totalBounty.compareTo(BigDecimal.ZERO) != 0){
 						output.add(unSortedList.get(i).getName() + ": " + unSortedList.get(i).getTotalBounty()); 
 					}
 				}
@@ -268,20 +271,20 @@ public class BountyListener implements Listener{
 
 	/**
 	 * Handles the actual transaction of bounties. Takes into account the economy system. Gives the recipient money
-	 * @param recipient
-	 * @param amount
+	 * @param recipient The player who will receive the amount
+	 * @param amount The amount to be given
 	 */
-	public void transactionHandler(String recipient, BigDecimal amount){
+	private void transactionHandler(String recipient, BigDecimal amount){
 		
 		if(!conf.getuseEcon()){ 
 			PlayerInventory inventory = Bukkit.getPlayer(recipient).getInventory();
 			ItemStack goldStack = new ItemStack(Material.GOLD_INGOT,amount.intValue()); 
 			inventory.addItem(goldStack);
 		}else{
-			EconomyResponse r = econ.depositPlayer(recipient,amount.doubleValue()); 
+			EconomyResponse r = conf.getEconomy().depositPlayer(recipient,amount.doubleValue()); 
 			
 			if(!r.transactionSuccess()){
-				SimpleBounty.logger.log(Level.SEVERE,String.format(SimpleBountyResource.getTransactionErrorMessage(),recipient,r.errorMessage));
+				SimpleBounty.logger.log(Level.SEVERE,String.format(Resource.getTransactionErrorMessage(),recipient,r.errorMessage));
 			}
 		}
 		
@@ -308,28 +311,19 @@ public class BountyListener implements Listener{
 			return true; 
 		}else{
 			
-			if(!econ.has(placer.getName(), amount.doubleValue())){ 
+			if(!conf.getEconomy().has(placer.getName(), amount.doubleValue())){ 
 				return false; 
 			}
 			
-			EconomyResponse placerEcon = econ.withdrawPlayer(placer.getName(),amount.doubleValue());
+			EconomyResponse placerEcon = conf.getEconomy().withdrawPlayer(placer.getName(),amount.doubleValue());
 			if(!placerEcon.transactionSuccess()){
-				SimpleBounty.logger.log(Level.SEVERE,String.format(SimpleBountyResource.getTransactionErrorMessage(), victim, placerEcon.errorMessage));
+				SimpleBounty.logger.log(Level.SEVERE,String.format(Resource.getTransactionErrorMessage(), victim, placerEcon.errorMessage));
 				return false; 
 			}
 			
 			victimProfile.addPlayerSetBounty(amount); 
 			return true; 
 		}
-	}
-
-	
-	/**
-	 * Returns the economy object.  
-	 * @return
-	 */
-	public Economy getEcon(){
-		return econ; 
 	}
 	
 	/**
